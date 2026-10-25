@@ -1,14 +1,24 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Sustituye por los emails de Google de los dos.
+    // La lista de correos con acceso NO está en el código (el repo es público): vive en el
+    // documento config/acceso, campo "correos" (array), que se edita solo desde la consola.
     function isCouple() {
       return request.auth != null
-        && request.auth.token.email in ['tu-email@gmail.com', 'email-de-tu-pareja@gmail.com'];
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in get(/databases/$(database)/documents/config/acceso).data.correos;
     }
 
     match /plans/{planId} {
       allow read, write: if isCouple();
     }
+
+    // La app lee este documento (aunque no exista) justo después del login para saber
+    // si la cuenta tiene acceso; si no lo tiene, la expulsa.
+    match /access/check {
+      allow get: if isCouple();
+    }
+
+    // Todo lo demás, incluida config/acceso, queda cerrado para la app.
   }
 }

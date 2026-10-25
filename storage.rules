@@ -1,18 +1,21 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Sustituye por los emails de Google de los dos (los mismos que en firestore.rules).
+    // Misma lista que firestore.rules: el documento config/acceso de Firestore.
     function isCouple() {
       return request.auth != null
-        && request.auth.token.email in ['tu-email@gmail.com', 'email-de-tu-pareja@gmail.com'];
+        && request.auth.token.email_verified == true
+        && request.auth.token.email in firestore.get(/databases/(default)/documents/config/acceso).data.correos;
     }
 
     // Las fotos de cada plan viven en plans/{planId}/...
     match /plans/{planId}/{file} {
-      allow read: if isCouple();
-      allow write: if isCouple()
+      allow read, delete: if isCouple();
+      allow create, update: if isCouple()
         && request.resource.contentType.matches('image/.*')
         && request.resource.size < 15 * 1024 * 1024;
     }
+
+    // Cualquier otra ruta queda cerrada por defecto.
   }
 }
