@@ -1,0 +1,18 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Sustituye por los emails de Google de los dos (los mismos que en firestore.rules).
+    function isCouple() {
+      return request.auth != null
+        && request.auth.token.email in ['tu-email@gmail.com', 'email-de-tu-pareja@gmail.com'];
+    }
+
+    // Las fotos de cada plan viven en plans/{planId}/...
+    match /plans/{planId}/{file} {
+      allow read: if isCouple();
+      allow write: if isCouple()
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 15 * 1024 * 1024;
+    }
+  }
+}

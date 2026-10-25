@@ -1,0 +1,14 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Sustituye por los emails de Google de los dos.
+    function isCouple() {
+      return request.auth != null
+        && request.auth.token.email in ['tu-email@gmail.com', 'email-de-tu-pareja@gmail.com'];
+    }
+
+    match /plans/{planId} {
+      allow read, write: if isCouple();
+    }
+  }
+}
