@@ -653,3 +653,9 @@ button:hover > .polaroid, .album-item:hover .polaroid { transform: rotate(0deg) 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+.splash-inner .splash-denied {
+  display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; border-radius: 14px;
+  background: var(--rose-tint); color: var(--rose-deep); font-size: 15.5px;
+}
+.splash-denied svg { flex-shrink: 0; margin-top: 3px; }

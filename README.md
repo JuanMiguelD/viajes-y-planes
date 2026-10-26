@@ -25,14 +25,33 @@ Sin configurar Firebase funciona en **modo local**: los planes y las fotos se gu
 1. Crea un proyecto en <https://console.firebase.google.com>.
 2. Activa **Authentication → Google**, **Firestore Database** y **Storage**. Ojo: desde 2024, Firebase pide el plan **Blaze** (con tarjeta) para usar Storage. Mientras no pasen de la cuota gratuita (5 GB de fotos) no cobra nada; conviene crear una alerta de presupuesto de 1 USD en Google Cloud para estar tranquilos.
 3. Añade una app web y copia su configuración: `cp .env.example .env.local` y rellena los valores.
-4. Pon vuestros dos emails en `firestore.rules` y `storage.rules`, y despliega las reglas:
+4. Crea la lista de acceso. En **Firestore Database → Datos**, crea la colección `config` con un documento de ID `acceso` y un campo `correos` de tipo **array** que tenga los dos correos de Google. Esta lista **no está en el código** (el repo es público): solo se edita desde la consola, y para dar o quitar acceso basta con cambiarla.
+5. Despliega las reglas:
    ```bash
    npx firebase-tools login
-   npx firebase-tools use --add          # elige tu proyecto
    npx firebase-tools deploy --only firestore:rules,storage
    ```
-5. (Opcional) Publicar la app en Firebase Hosting:
+   La primera vez, la CLI pide permiso para que las reglas de Storage puedan leer Firestore (las dos consultan la misma lista). Acéptalo.
+6. (Opcional) Publicar la app en Firebase Hosting:
    ```bash
    npm run build && npx firebase-tools deploy --only hosting
    ```
    Añade el dominio de Hosting en Authentication → Settings → Authorized domains si no aparece ya.
+
+## Colaborar (para la otra persona)
+
+Para editar el código y probarlo en su computador:
+
+1. **GitHub**: el dueño la invita al repo en *Settings → Collaborators → Add people*. Ella acepta la invitación desde su correo.
+2. **Herramientas**: [Node.js](https://nodejs.org) 20 o más nuevo, y git.
+3. **Copia local**:
+   ```bash
+   git clone https://github.com/JuanMiguelD/viajes-y-planes.git
+   cd viajes-y-planes
+   npm install
+   ```
+4. **Configuración**: crea `.env.local` con los mismos valores que tiene el dueño. Pásenselos por un canal privado (WhatsApp, en persona), **nunca** subiéndolos al repo. Sin ese archivo la app arranca en modo local, que también sirve para probar diseño.
+5. **Probar**: `npm run dev` y abrir `http://localhost:5173`. Para entrar con Google, su correo debe estar en `config/acceso`.
+6. **Desplegar reglas o la web** (opcional): el dueño la agrega al proyecto de Firebase en *Configuración del proyecto → Usuarios y permisos* con rol **Editor**. Después ella ejecuta `npx firebase-tools login`.
+
+Cada uno trabaja en una rama (`git switch -c mi-cambio`) y abre un *pull request* para que el otro lo revise antes de unirlo a `main`.
