@@ -15,6 +15,7 @@ interface PlansStore {
   deletePlan: (id: string) => Promise<void>
   toggleDone: (plan: Plan) => Promise<void>
   toggleRepeat: (plan: Plan) => Promise<void>
+  toggleFavorite: (plan: Plan) => Promise<void>
   markRepeated: (plan: Plan) => Promise<void>
 }
 
@@ -23,7 +24,13 @@ const LOCAL_KEY = 'viajesyplanes.plans'
 
 /** Rellena campos añadidos después de crear los primeros planes. */
 function withDefaults(plan: Plan): Plan {
-  return { ...plan, cover: plan.cover ?? null, photoCount: plan.photoCount ?? 0 }
+  return {
+    ...plan,
+    cover: plan.cover ?? null,
+    photoCount: plan.photoCount ?? 0,
+    tag: plan.tag ?? null,
+    favorite: plan.favorite ?? false,
+  }
 }
 
 /**
@@ -89,16 +96,26 @@ export function PlansProvider({ children }: { children: ReactNode }) {
       addPlan,
       updatePlan,
       deletePlan,
-      toggleDone: (plan) =>
-        plan.status === 'realizado'
-          ? updatePlan(plan.id, {
-              status: 'pendiente',
-              repeat: false,
-              completedAt: null,
-              timesDone: Math.max(0, plan.timesDone - 1),
-            })
-          : updatePlan(plan.id, { status: 'realizado', completedAt: today(), timesDone: plan.timesDone + 1 }),
-      toggleRepeat: (plan) => updatePlan(plan.id, { repeat: !plan.repeat }),
+      toggleDone: (plan) => {
+        if (plan.status === 'realizado') {
+          return updatePlan(plan.id, {
+            status: 'pendiente',
+            repeat: false,
+            completedAt: null,
+            timesDone: Math.max(0, plan.timesDone - 1),
+          })
+        }
+        // Un plan "para repetir" nunca se marca cumplido del todo: queda pendiente, listo para la próxima vez.
+        if (plan.repeat) return updatePlan(plan.id, { completedAt: today(), timesDone: plan.timesDone + 1 })
+        return updatePlan(plan.id, { status: 'realizado', completedAt: today(), timesDone: plan.timesDone + 1 })
+      },
+      toggleRepeat: (plan) => {
+        const repeat = !plan.repeat
+        // Al activarlo sobre un plan ya cumplido, vuelve a quedar pendiente (listo para repetirse).
+        if (repeat && plan.status === 'realizado') return updatePlan(plan.id, { repeat, status: 'pendiente' })
+        return updatePlan(plan.id, { repeat })
+      },
+      toggleFavorite: (plan) => updatePlan(plan.id, { favorite: !plan.favorite }),
       markRepeated: (plan) => updatePlan(plan.id, { completedAt: today(), timesDone: plan.timesDone + 1 }),
     }
   }, [plans, loading, error])

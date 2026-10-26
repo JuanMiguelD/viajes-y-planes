@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, Marker, useMap, useMapEvents } from 'react-leaflet'
-import { BaseMap } from './BaseMap'
+import { Map as GoogleMap, Marker, useMap } from '@vis.gl/react-google-maps'
 import { Search, X } from 'lucide-react'
-import type { Category, Place } from '../types'
+import { mapsEnabled } from '../maps'
+import type { Category, Place, Tag } from '../types'
 import { DEFAULT_CENTER, planIcon } from './map'
+import { MAP_BASE_PROPS, useShowZoomControl } from './mapStyle'
 
 interface SearchResult {
   place_id: number
@@ -12,15 +13,12 @@ interface SearchResult {
   lon: string
 }
 
-function ClickHandler({ onPick }: { onPick: (lat: number, lng: number) => void }) {
-  useMapEvents({ click: (e) => onPick(e.latlng.lat, e.latlng.lng) })
-  return null
-}
-
 function FlyTo({ place }: { place: Place | null }) {
   const map = useMap()
   useEffect(() => {
-    if (place) map.setView([place.lat, place.lng], Math.max(map.getZoom(), 14))
+    if (!map || !place) return
+    map.panTo({ lat: place.lat, lng: place.lng })
+    if ((map.getZoom() ?? 0) < 14) map.setZoom(14)
   }, [map, place])
   return null
 }
@@ -29,10 +27,12 @@ function FlyTo({ place }: { place: Place | null }) {
 export function PlacePicker({
   value,
   category,
+  tag,
   onChange,
 }: {
   value: Place | null
   category: Category
+  tag: Tag | null
   onChange: (place: Place | null) => void
 }) {
   const [search, setSearch] = useState('')
@@ -40,6 +40,7 @@ export function PlacePicker({
   const [searching, setSearching] = useState(false)
   const [failed, setFailed] = useState(false)
   const [focus, setFocus] = useState<Place | null>(null)
+  const showZoomControl = useShowZoomControl()
 
   const runSearch = async () => {
     if (!search.trim()) return
@@ -98,17 +99,33 @@ export function PlacePicker({
           ))}
         </ul>
       )}
-      <MapContainer className="picker-map" center={value ? [value.lat, value.lng] : DEFAULT_CENTER} zoom={value ? 14 : 3}>
-        <BaseMap />
-        <ClickHandler onPick={(lat, lng) => onChange({ name: value?.name || 'Lugar marcado en el mapa', lat, lng })} />
-        <FlyTo place={focus} />
-        {value && (
-          <Marker
-            position={[value.lat, value.lng]}
-            icon={planIcon({ category, status: 'pendiente', deadline: null }, true)}
-          />
-        )}
-      </MapContainer>
+      {mapsEnabled ? (
+        <GoogleMap
+          {...MAP_BASE_PROPS}
+          className="picker-map"
+          defaultCenter={value ? { lat: value.lat, lng: value.lng } : DEFAULT_CENTER}
+          defaultZoom={value ? 14 : 3}
+          gestureHandling="greedy"
+          zoomControl={showZoomControl}
+          onClick={(e) => {
+            if (!e.detail.latLng) return
+            onChange({ name: value?.name || 'Lugar marcado en el mapa', lat: e.detail.latLng.lat, lng: e.detail.latLng.lng })
+          }}
+        >
+          <FlyTo place={focus} />
+          {value && (
+            <Marker
+              position={{ lat: value.lat, lng: value.lng }}
+              icon={planIcon({ category, status: 'pendiente', deadline: null, tag }, true)}
+            />
+          )}
+        </GoogleMap>
+      ) : (
+        <p className="map-missing-key">
+          Falta configurar la API key de Google Maps para ver el mapa. Mientras tanto puedes buscar el lugar arriba y
+          elegirlo de los resultados.
+        </p>
+      )}
       {value ? (
         <div className="place-name">
           <input value={value.name} aria-label="Nombre del lugar" onChange={(e) => onChange({ ...value, name: e.target.value })} />
@@ -117,7 +134,9 @@ export function PlacePicker({
           </button>
         </div>
       ) : (
-        <p className="field-hint">También puedes tocar el mapa para marcar el lugar.</p>
+        <p className="field-hint">
+          {mapsEnabled ? 'También puedes tocar el mapa para marcar el lugar.' : 'Elige un resultado de la búsqueda para marcar el lugar.'}
+        </p>
       )}
     </div>
   )

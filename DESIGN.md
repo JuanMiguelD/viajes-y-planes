@@ -8,18 +8,19 @@ Primera persona del plural y español latino neutro: "Nos quedan 5 planes", "¡L
 
 ## Color
 
-| Token          | Hex       | Uso |
-|----------------|-----------|-----|
-| `--paper`      | `#FBEFF0` | Fondo de navegación, huecos de foto. Blanco rosado. |
-| `--surface`    | `#FFFAF9` | Fondo de contenido y paneles. |
-| `--line`       | `#F0DDE0` | Separadores. |
-| `--ink`        | `#3A2A30` | Texto: marrón ciruela, más suave que el negro. |
-| `--muted`      | `#8E7A81` | Texto secundario. |
-| `--rose`       | `#C8476B` | **Principal.** Cumplido, acciones, marcadores, navegación activa. |
-| `--rose-tint`  | `#FCE4EA` | Estados seleccionados. |
-| `--honey`      | `#B07A10` | **Acento.** Solo fechas límite cercanas o vencidas. |
+| Token           | Hex       | Uso |
+|-----------------|-----------|-----|
+| `--paper`       | `#F1E4D0` | Fondo de navegación, huecos de foto. Beige cálido. |
+| `--surface`     | `#FDF8F0` | Fondo de contenido y paneles. Crema. |
+| `--line`        | `#E6D7BB` | Separadores. |
+| `--ink`         | `#3B2B1C` | Texto: marrón café oscuro, más suave que el negro. |
+| `--muted`       | `#8C7355` | Texto secundario. |
+| `--coffee`      | `#8A5A34` | **Principal.** Cumplido, acciones, marcadores, navegación activa. Marrón café. |
+| `--coffee-tint` | `#EAD9BF` | Estados seleccionados. |
+| `--honey`       | `#A8761A` | **Acento.** Solo fechas límite cercanas o vencidas. |
+| `--heart`       | `#D6304A` | Solo los corazones (marca, categoría "Los dos", favoritos). Rojo, el único toque de color fuera de la paleta café. |
 
-El mapa también se tiñe: tierra rosada, parques verde salvia y agua azul bebé.
+El mapa también se tiñe: tierra beige, parques verde salvia y agua azul suave.
 
 ## Tipografía
 
@@ -28,8 +29,10 @@ El mapa también se tiñe: tierra rosada, parques verde salvia y agua azul bebé
 
 ## Codificación
 
-- **Estado** = relleno. Cumplido: círculo rosa relleno. Pendiente: círculo con borde. Igual en la lista y en el mapa.
-- **Categoría** = icono: corazón para "Los dos", personas para "Con amigos".
+- **Estado** = relleno. Cumplido: círculo café relleno. Pendiente: círculo con borde. Igual en la lista y en el mapa.
+- **Categoría** = icono: corazón rojo para "Los dos", personas para "Con amigos".
+- **Etiqueta** = icono del tipo de lugar (restaurante, café, parque…), independiente de la categoría.
+- **Favorito** = corazón rojo relleno, independiente de "para repetir".
 - **Fecha límite** = texto en miel si vence en 7 días o menos, o si ya venció.
 
 ## Composición

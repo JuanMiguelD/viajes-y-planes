@@ -3,13 +3,14 @@ import { Check, MapPin, Pencil, Repeat2, Trash2, Undo2, X } from 'lucide-react'
 import { usePlanActions } from '../actions'
 import { usePlans } from '../store'
 import { useToast } from '../toast'
-import { CATEGORY_LABEL } from '../types'
+import { CATEGORY_LABEL, TAG_LABEL } from '../types'
 import { daysUntil, deadlineState, longDate, plural, since } from '../utils'
 import { CategoryIcon } from './CategoryIcon'
 import { Gallery } from './Gallery'
 import { PlanForm } from './PlanForm'
 import { Sheet } from './Sheet'
 import { StaticMap } from './StaticMap'
+import { TagIcon } from './TagIcon'
 
 /** Ficha de un plan. Lee el plan del store por id, así que siempre refleja el estado actual. */
 export function PlanDetail({
@@ -68,6 +69,13 @@ export function PlanDetail({
           <p className="detail-category">
             <CategoryIcon category={plan.category} />
             {CATEGORY_LABEL[plan.category]}
+            {plan.tag && (
+              <>
+                {' · '}
+                <TagIcon tag={plan.tag} size={14} />
+                {TAG_LABEL[plan.tag]}
+              </>
+            )}
           </p>
           <h2 className="detail-title">{plan.title}</h2>
           {plan.description && <p className="detail-desc">{plan.description}</p>}

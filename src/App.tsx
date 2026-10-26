@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { APIProvider } from '@vis.gl/react-google-maps'
 import { BookHeart, Heart, ListChecks, LogOut, Map as MapIcon, Plus, Repeat2, type LucideIcon } from 'lucide-react'
 import { AuthGate } from './components/AuthGate'
 import { PlanDetail } from './components/PlanDetail'
 import { PlanForm } from './components/PlanForm'
 import { firebaseEnabled } from './firebase'
+import { GOOGLE_MAPS_API_KEY, mapsEnabled } from './maps'
 import { PlansProvider, usePlans } from './store'
 import { ToastProvider } from './toast'
 import { AlbumView } from './views/AlbumView'
@@ -62,7 +64,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
     <div className={`shell shell-${tab}`}>
       <header className="masthead">
         <span className="brand">
-          <Heart size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
+          <Heart className="icon-heart" size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
           Nuestros planes
         </span>
         <button className="btn btn-primary btn-new" onClick={() => setCreating(true)}>
@@ -146,16 +148,22 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
   )
 }
 
+function Providers({ children }: { children: ReactNode }) {
+  return mapsEnabled ? <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>{children}</APIProvider> : <>{children}</>
+}
+
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthGate>
-        {(logout) => (
-          <PlansProvider>
-            <Shell onLogout={logout} />
-          </PlansProvider>
-        )}
-      </AuthGate>
-    </ToastProvider>
+    <Providers>
+      <ToastProvider>
+        <AuthGate>
+          {(logout) => (
+            <PlansProvider>
+              <Shell onLogout={logout} />
+            </PlansProvider>
+          )}
+        </AuthGate>
+      </ToastProvider>
+    </Providers>
   )
 }

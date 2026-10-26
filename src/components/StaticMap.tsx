@@ -1,26 +1,27 @@
-import { MapContainer, Marker } from 'react-leaflet'
-import { BaseMap } from './BaseMap'
+import { Map as GoogleMap, Marker } from '@vis.gl/react-google-maps'
+import { mapsEnabled } from '../maps'
 import type { Plan } from '../types'
 import { planIcon } from './map'
+import { MAP_BASE_PROPS } from './mapStyle'
 
 /** Mapa no interactivo del lugar de un plan, para la cabecera de su ficha. */
 export function StaticMap({ plan, className }: { plan: Plan; className?: string }) {
   const { lat, lng } = plan.place!
+  if (!mapsEnabled) return null
   return (
-    <MapContainer
+    <GoogleMap
+      {...MAP_BASE_PROPS}
       className={className}
-      center={[lat, lng]}
-      zoom={14}
+      defaultCenter={{ lat, lng }}
+      defaultZoom={14}
+      gestureHandling="none"
+      draggable={false}
+      disableDoubleClickZoom
+      scrollwheel={false}
       zoomControl={false}
-      dragging={false}
-      scrollWheelZoom={false}
-      doubleClickZoom={false}
-      touchZoom={false}
-      keyboard={false}
-      attributionControl={false}
+      keyboardShortcuts={false}
     >
-      <BaseMap />
-      <Marker position={[lat, lng]} icon={planIcon(plan)} interactive={false} />
-    </MapContainer>
+      <Marker position={{ lat, lng }} icon={planIcon(plan)} clickable={false} />
+    </GoogleMap>
   )
 }

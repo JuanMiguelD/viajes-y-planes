@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import '@fontsource-variable/nunito'
 import '@fontsource/caveat/600.css'
 import '@fontsource/caveat/700.css'
-import 'leaflet/dist/leaflet.css'
 import './index.css'
 import App from './App.tsx'
 
