@@ -5,6 +5,7 @@ import { AuthGate } from './components/AuthGate'
 import { PlanDetail } from './components/PlanDetail'
 import { PlanForm } from './components/PlanForm'
 import { ReminderSettings } from './components/ReminderSettings'
+import { ConfirmRepeatProvider } from './confirmRepeat'
 import { firebaseEnabled } from './firebase'
 import { GOOGLE_MAPS_API_KEY, mapsEnabled } from './maps'
 import { checkReminders } from './notifications'
@@ -40,6 +41,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
   const [editOnOpen, setEditOnOpen] = useState(false)
   const [mapFocus, setMapFocus] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [createDate, setCreateDate] = useState<string | null>(null)
   const [editingReminders, setEditingReminders] = useState(false)
 
   useEffect(() => {
@@ -77,7 +79,14 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
     setSelected(id)
   }, [])
   const closeDetail = useCallback(() => setSelected(null), [])
-  const closeForm = useCallback(() => setCreating(false), [])
+  const openCreate = useCallback((date?: string) => {
+    setCreateDate(date ?? null)
+    setCreating(true)
+  }, [])
+  const closeForm = useCallback(() => {
+    setCreating(false)
+    setCreateDate(null)
+  }, [])
 
   const counts: Partial<Record<Tab, number>> = {
     planes: plans.filter((p) => p.status === 'pendiente').length,
@@ -92,7 +101,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
           <Heart className="icon-heart" size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
           Nuestros planes
         </span>
-        <button className="btn btn-primary btn-new" onClick={() => setCreating(true)}>
+        <button className="btn btn-primary btn-new" onClick={() => openCreate()}>
           <Plus size={17} strokeWidth={2.2} aria-hidden />
           <span>Nuevo plan</span>
         </button>
@@ -161,13 +170,13 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
             </div>
           </div>
         ) : tab === 'planes' ? (
-          <PlansView onOpen={openView} onCreate={() => setCreating(true)} />
+          <PlansView onOpen={openView} onCreate={() => openCreate()} />
         ) : tab === 'mapa' ? (
-          <MapView focusId={mapFocus} onOpen={openView} onCreate={() => setCreating(true)} />
+          <MapView focusId={mapFocus} onOpen={openView} onCreate={() => openCreate()} />
         ) : tab === 'repetir' ? (
           <RepeatView onOpen={openView} onOpenEdit={openForEdit} onGoToPlans={() => setTab('planes')} />
         ) : tab === 'calendario' ? (
-          <CalendarView onOpen={openView} />
+          <CalendarView onOpen={openView} onAddPlan={openCreate} />
         ) : (
           <AlbumView onOpenPlan={openView} onGoToPlans={() => setTab('planes')} />
         )}
@@ -183,7 +192,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
           onRepeat={openForEdit}
         />
       )}
-      {creating && <PlanForm onClose={closeForm} />}
+      {creating && <PlanForm initialDate={createDate ?? undefined} onClose={closeForm} />}
       {editingReminders && <ReminderSettings onClose={() => setEditingReminders(false)} />}
     </div>
   )
@@ -201,7 +210,9 @@ export default function App() {
           {(logout) => (
             <PlansProvider>
               <PhotoPromptProvider>
-                <Shell onLogout={logout} />
+                <ConfirmRepeatProvider>
+                  <Shell onLogout={logout} />
+                </ConfirmRepeatProvider>
               </PhotoPromptProvider>
             </PlansProvider>
           )}

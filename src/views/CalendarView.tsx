@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarClock, ChevronLeft, ChevronRight, Heart, X } from 'lucide-react'
+import { CalendarClock, ChevronLeft, ChevronRight, Heart, Plus, X } from 'lucide-react'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { Sheet } from '../components/Sheet'
 import { usePlans } from '../store'
@@ -39,16 +39,18 @@ function buildMonth(
   return cells
 }
 
-/** Ficha corta de un día: qué planes cumplimos o tenemos puestos para esa fecha. */
+/** Ficha corta de un día: qué planes cumplimos o tenemos puestos para esa fecha, y un botón para agregar uno. */
 function DaySheet({
   dateKey,
   plans,
   onOpen,
+  onAdd,
   onClose,
 }: {
   dateKey: string
   plans: Plan[]
   onOpen: (id: string) => void
+  onAdd: (date: string) => void
   onClose: () => void
 }) {
   return (
@@ -61,37 +63,54 @@ function DaySheet({
           </button>
         </header>
         <div className="pick-body">
-          <ul className="pick-list">
-            {plans.map((p) => (
-              <li key={p.id}>
-                <button
-                  onClick={() => {
-                    onClose()
-                    onOpen(p.id)
-                  }}
-                >
-                  <span className="pick-thumb">
-                    {p.cover ? <img src={p.cover.url} alt="" /> : <CategoryIcon category={p.category} size={18} />}
-                  </span>
-                  <span className="pick-text">
-                    <span className="pick-title">{p.title}</span>
-                    <span className="pick-meta">
-                      {p.status === 'realizado' ? 'Nos vimos' : 'Lo tenemos planeado'}
-                      {p.place && ` · ${p.place.name}`}
+          {plans.length > 0 ? (
+            <ul className="pick-list">
+              {plans.map((p) => (
+                <li key={p.id}>
+                  <button
+                    onClick={() => {
+                      onClose()
+                      onOpen(p.id)
+                    }}
+                  >
+                    <span className="pick-thumb">
+                      {p.cover ? <img src={p.cover.url} alt="" /> : <CategoryIcon category={p.category} size={18} />}
                     </span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+                    <span className="pick-text">
+                      <span className="pick-title">{p.title}</span>
+                      <span className="pick-meta">
+                        {p.status === 'realizado' ? 'Nos vimos' : 'Lo tenemos planeado'}
+                        {p.place && ` · ${p.place.name}`}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="group-empty">Nada para este día todavía.</p>
+          )}
         </div>
+        <footer className="form-foot">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => {
+              onClose()
+              onAdd(dateKey)
+            }}
+          >
+            <Plus size={17} strokeWidth={2.2} aria-hidden />
+            Agregar plan este día
+          </button>
+        </footer>
       </div>
     </Sheet>
   )
 }
 
 /** Calendario mensual: corazón en los días que nos vimos, ícono de reloj en los planes con fecha fija, hoy resaltado. */
-export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
+export function CalendarView({ onOpen, onAddPlan }: { onOpen: (id: string) => void; onAddPlan: (date: string) => void }) {
   const { plans } = usePlans()
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [month, setMonth] = useState(() => new Date().getMonth())
@@ -176,7 +195,6 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
               key={cell.key}
               type="button"
               className={`calendar-day ${cell.isToday ? 'is-today' : ''}`}
-              disabled={cell.done.length === 0 && cell.planned.length === 0}
               onClick={() => setOpenDay(cell.key)}
               aria-label={longDate(cell.key)}
             >
@@ -200,7 +218,9 @@ export function CalendarView({ onOpen }: { onOpen: (id: string) => void }) {
         </div>
       )}
 
-      {openDay && <DaySheet dateKey={openDay} plans={dayPlans} onOpen={onOpen} onClose={() => setOpenDay(null)} />}
+      {openDay && (
+        <DaySheet dateKey={openDay} plans={dayPlans} onOpen={onOpen} onAdd={onAddPlan} onClose={() => setOpenDay(null)} />
+      )}
     </div>
   )
 }

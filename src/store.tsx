@@ -13,7 +13,8 @@ interface PlansStore {
   addPlan: (input: PlanInput) => Promise<string>
   updatePlan: (id: string, patch: Partial<PlanInput>) => Promise<void>
   deletePlan: (id: string) => Promise<void>
-  toggleDone: (plan: Plan) => Promise<void>
+  /** `repeat` solo aplica al marcar un plan como cumplido; se ignora al revertirlo. */
+  toggleDone: (plan: Plan, repeat?: boolean) => Promise<void>
   toggleRepeat: (plan: Plan) => Promise<void>
   toggleFavorite: (plan: Plan) => Promise<void>
   /** Crea una tarjeta nueva a partir de un plan cumplido, lista para ponerle la próxima fecha y detalles. */
@@ -99,7 +100,7 @@ export function PlansProvider({ children }: { children: ReactNode }) {
       addPlan,
       updatePlan,
       deletePlan,
-      toggleDone: (plan) => {
+      toggleDone: (plan, repeat) => {
         if (plan.status === 'realizado') {
           return updatePlan(plan.id, {
             status: 'pendiente',
@@ -108,7 +109,12 @@ export function PlansProvider({ children }: { children: ReactNode }) {
             timesDone: Math.max(0, plan.timesDone - 1),
           })
         }
-        return updatePlan(plan.id, { status: 'realizado', completedAt: today(), timesDone: plan.timesDone + 1 })
+        return updatePlan(plan.id, {
+          status: 'realizado',
+          completedAt: today(),
+          timesDone: plan.timesDone + 1,
+          ...(repeat !== undefined ? { repeat } : {}),
+        })
       },
       // Solo se usa para quitar la marca (el botón "Quitar"): repeatPlan es quien la activa, al crear la tarjeta siguiente.
       toggleRepeat: (plan) => updatePlan(plan.id, { repeat: !plan.repeat }),

@@ -4,7 +4,7 @@ import { usePlanActions } from '../actions'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { usePlans } from '../store'
 import { CATEGORY_LABEL, type Plan } from '../types'
-import { plural, since } from '../utils'
+import { numericDate, plural, since } from '../utils'
 
 /** Fila compartida por "Favoritos" y "Para repetir": miniatura, datos del plan y acciones a la derecha. */
 function PlanCard({
@@ -42,6 +42,9 @@ function PlanCard({
         {when && (
           <p className="repeat-when">
             {when}
+            {plan.status === 'realizado' && plan.completedAt && (
+              <span className="repeat-done-date">{numericDate(plan.completedAt)}</span>
+            )}
             {plan.timesDone > 1 && <span className="repeat-times">{plural(plan.timesDone, 'vez', 'veces')}</span>}
           </p>
         )}

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useCallback, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
 import { usePlans } from '../store'
 import { useToast } from '../toast'
@@ -27,14 +27,29 @@ const EMPTY: PlanInput = {
   photoCount: 0,
 }
 
-export function PlanForm({ plan, onClose }: { plan?: Plan; onClose: () => void }) {
+/** Arma el plan en blanco para una fecha elegida en el calendario: pasada = cumplido ese día, futura = fecha límite. */
+function seedFromDate(date: string): PlanInput {
+  if (date < today()) return { ...EMPTY, status: 'realizado', completedAt: date, timesDone: 1 }
+  return { ...EMPTY, deadline: date }
+}
+
+export function PlanForm({ plan, initialDate, onClose }: { plan?: Plan; initialDate?: string; onClose: () => void }) {
   const { addPlan, updatePlan } = usePlans()
   const toast = useToast()
-  const [form, setForm] = useState<PlanInput>(plan ?? EMPTY)
+  const [form, setForm] = useState<PlanInput>(() => plan ?? (initialDate ? seedFromDate(initialDate) : EMPTY))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dirty, setDirty] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
 
-  const set = <K extends keyof PlanInput>(key: K, value: PlanInput[K]) => setForm((f) => ({ ...f, [key]: value }))
+  const set = <K extends keyof PlanInput>(key: K, value: PlanInput[K]) => {
+    setForm((f) => ({ ...f, [key]: value }))
+    setDirty(true)
+  }
+
+  // Si cambiamos algo, pedimos confirmación antes de cerrar sin guardar (X, scrim o Escape).
+  // Memoizado para no cambiar de referencia en cada tecla (Sheet re-suscribe su listener de Escape si cambia).
+  const requestClose = useCallback(() => (dirty ? setConfirmDiscard(true) : onClose()), [dirty, onClose])
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -60,11 +75,11 @@ export function PlanForm({ plan, onClose }: { plan?: Plan; onClose: () => void }
   }
 
   return (
-    <Sheet label={plan ? 'Editar plan' : 'Nuevo plan'} onClose={onClose}>
+    <Sheet label={plan ? 'Editar plan' : 'Nuevo plan'} onClose={requestClose}>
       <form className="form" onSubmit={submit} noValidate>
         <header className="form-head">
           <h2>{plan ? 'Editar plan' : 'Nuevo plan'}</h2>
-          <button type="button" className="sheet-close" onClick={onClose} aria-label="Cerrar">
+          <button type="button" className="sheet-close" onClick={requestClose} aria-label="Cerrar">
             <X size={20} />
           </button>
         </header>
@@ -123,6 +138,7 @@ export function PlanForm({ plan, onClose }: { plan?: Plan; onClose: () => void }
                     completedAt: checked ? (f.completedAt ?? today()) : null,
                     timesDone: checked ? Math.max(f.timesDone, 1) : 0,
                   }))
+                  setDirty(true)
                   setError(null)
                 }}
               />
@@ -183,15 +199,31 @@ export function PlanForm({ plan, onClose }: { plan?: Plan; onClose: () => void }
           </div>
         </div>
 
-        <footer className="form-foot">
-          {error && <p className="field-error">{error}</p>}
-          <button type="button" className="btn btn-quiet" onClick={onClose}>
-            Cancelar
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Guardando…' : plan ? 'Guardar cambios' : 'Agregar plan'}
-          </button>
-        </footer>
+        {confirmDiscard ? (
+          <footer className="form-foot">
+            <div className="confirm">
+              <p>¿Descartar los cambios sin guardar?</p>
+              <div>
+                <button type="button" className="btn btn-quiet" onClick={() => setConfirmDiscard(false)}>
+                  Seguir editando
+                </button>
+                <button type="button" className="btn btn-danger" onClick={onClose}>
+                  Descartar
+                </button>
+              </div>
+            </div>
+          </footer>
+        ) : (
+          <footer className="form-foot">
+            {error && <p className="field-error">{error}</p>}
+            <button type="button" className="btn btn-quiet" onClick={requestClose}>
+              Cancelar
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={saving}>
+              {saving ? 'Guardando…' : plan ? 'Guardar cambios' : 'Agregar plan'}
+            </button>
+          </footer>
+        )}
       </form>
     </Sheet>
   )

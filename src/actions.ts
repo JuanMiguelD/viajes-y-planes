@@ -1,3 +1,4 @@
+import { useConfirmRepeat } from './confirmRepeat'
 import { usePhotoPrompt } from './photoPrompt'
 import { usePlans } from './store'
 import { useToast } from './toast'
@@ -8,6 +9,7 @@ export function usePlanActions() {
   const { toggleDone, toggleRepeat, toggleFavorite, updatePlan, repeatPlan } = usePlans()
   const toast = useToast()
   const promptPhotos = usePhotoPrompt()
+  const askRepeat = useConfirmRepeat()
 
   const restore = (prev: Plan) => () =>
     updatePlan(prev.id, {
@@ -21,15 +23,16 @@ export function usePlanActions() {
 
   return {
     toggleDone: async (plan: Plan) => {
-      const wasPending = plan.status === 'pendiente'
-      await toggleDone(plan)
-      if (wasPending) {
-        toast('¡Cumplido! Sube las fotos de hoy cuando quieras.', [
-          { label: 'Deshacer', run: restore(plan) },
-          uploadAction(plan),
-        ])
+      if (plan.status === 'pendiente') {
+        const repeat = await askRepeat(plan.title)
+        await toggleDone(plan, repeat)
+        const message = repeat
+          ? '¡Cumplido! Lo guardamos para repetir. Sube las fotos de hoy cuando quieras.'
+          : '¡Cumplido! Sube las fotos de hoy cuando quieras.'
+        toast(message, [{ label: 'Deshacer', run: restore(plan) }, uploadAction(plan)])
         return
       }
+      await toggleDone(plan)
       toast('Volvió a pendientes', { label: 'Deshacer', run: restore(plan) })
     },
     toggleRepeat: async (plan: Plan) => {

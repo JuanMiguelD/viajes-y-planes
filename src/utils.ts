@@ -43,6 +43,12 @@ export function longDate(date: string): string {
   return parse(date).toLocaleDateString('es-419', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+/** "01/09/2026", para mostrar chiquito en las tarjetas de planes cumplidos. */
+export function numericDate(date: string): string {
+  const [y, m, d] = date.split('-')
+  return `${d}/${m}/${y}`
+}
+
 /** Texto corto para la columna de fecha límite del checklist. */
 export function deadlineLabel(plan: Plan): string | null {
   if (!plan.deadline) return null

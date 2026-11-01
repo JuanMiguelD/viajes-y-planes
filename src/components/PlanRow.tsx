@@ -1,7 +1,7 @@
 import { Check, Heart, MapPin, Repeat2 } from 'lucide-react'
 import { usePlanActions } from '../actions'
 import { CATEGORY_LABEL, TAG_LABEL, type Plan } from '../types'
-import { deadlineLabel, deadlineState } from '../utils'
+import { deadlineLabel, deadlineState, numericDate } from '../utils'
 import { CategoryIcon } from './CategoryIcon'
 import { TagIcon } from './TagIcon'
 
@@ -29,6 +29,7 @@ export function PlanRow({ plan, onOpen }: { plan: Plan; onOpen: (id: string) => 
           {label && !done && (
             <span className={`meta-item meta-date ${urgent ? 'is-urgent' : ''}`}>{label}</span>
           )}
+          {done && plan.completedAt && <span className="meta-item meta-done-date">{numericDate(plan.completedAt)}</span>}
           <span className="meta-item" title={CATEGORY_LABEL[plan.category]}>
             <CategoryIcon category={plan.category} size={13} />
             {CATEGORY_LABEL[plan.category]}
