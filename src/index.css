@@ -85,6 +85,8 @@ img { display: block; }
 }
 .brand { display: inline-flex; align-items: center; gap: 6px; font-family: var(--hand); font-weight: 700; font-size: 29px; line-height: 1; color: var(--coffee-deep); }
 .brand svg { color: var(--coffee); }
+.brand-photo { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--white), 0 0 0 3px var(--line-strong); }
+@media (min-width: 900px) { .brand-photo { width: 34px; height: 34px; } }
 .btn-new { height: 36px; padding: 0 14px 0 10px; }
 
 .nav {
@@ -240,6 +242,10 @@ img { display: block; }
 .meta-place { max-width: 26ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; }
 .meta-place svg { vertical-align: -2px; margin-right: 5px; }
 
+.row-trail { display: flex; align-items: center; gap: 10px; }
+.row-fav { color: var(--faint); }
+.row-fav:hover { color: var(--heart); background: var(--paper); }
+.row-fav.is-fav { color: var(--heart); }
 .row-date { font-size: 13.5px; color: var(--muted); white-space: nowrap; }
 .row-date.is-urgent { color: var(--honey); font-weight: 600; display: inline-flex; align-items: center; gap: 7px; }
 .row-date.is-urgent::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -460,6 +466,8 @@ img { display: block; }
 .field-label { padding: 0; font-size: 13.5px; font-weight: 600; color: var(--ink-2); }
 .optional { font-weight: 400; color: var(--faint); margin-left: 4px; }
 .field-hint { font-size: 13px; color: var(--muted); }
+.field-hint svg { vertical-align: -3px; margin-right: 4px; color: var(--coffee); }
+.field-hint code { font-family: monospace; font-size: 12px; background: var(--paper); padding: 1px 5px; border-radius: 4px; }
 .field-error { font-size: 13.5px; color: var(--danger); }
 
 .input {
@@ -472,6 +480,13 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height
 .input[aria-invalid='true'] { border-color: var(--danger); }
 .input-title { font-size: 17px; font-weight: 500; height: 46px; }
 .input-date { max-width: 220px; }
+
+.check-toggle {
+  display: flex; align-items: center; gap: 10px; padding: 11px 14px;
+  border: 1px solid var(--line-strong); border-radius: 12px; background: var(--white);
+  color: var(--ink-2); font-size: 14.5px; cursor: pointer;
+}
+.check-toggle input { width: 18px; height: 18px; accent-color: var(--coffee); flex-shrink: 0; }
 
 .segmented { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .segmented label {

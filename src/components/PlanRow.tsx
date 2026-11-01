@@ -1,4 +1,4 @@
-import { Check, MapPin, Repeat2 } from 'lucide-react'
+import { Check, Heart, MapPin, Repeat2 } from 'lucide-react'
 import { usePlanActions } from '../actions'
 import { CATEGORY_LABEL, TAG_LABEL, type Plan } from '../types'
 import { deadlineLabel, deadlineState } from '../utils'
@@ -6,7 +6,7 @@ import { CategoryIcon } from './CategoryIcon'
 import { TagIcon } from './TagIcon'
 
 export function PlanRow({ plan, onOpen }: { plan: Plan; onOpen: (id: string) => void }) {
-  const { toggleDone } = usePlanActions()
+  const { toggleDone, toggleFavorite } = usePlanActions()
   const done = plan.status === 'realizado'
   const deadline = deadlineState(plan)
   const label = deadlineLabel(plan)
@@ -53,10 +53,18 @@ export function PlanRow({ plan, onOpen }: { plan: Plan; onOpen: (id: string) => 
           )}
         </span>
       </button>
-      {label && !done && (
-        <span className={`row-date ${urgent ? 'is-urgent' : ''}`}>{label}</span>
-      )}
-      {done && plan.cover && <img className="row-thumb" src={plan.cover.url} alt="" />}
+      <div className="row-trail">
+        {label && !done && <span className={`row-date ${urgent ? 'is-urgent' : ''}`}>{label}</span>}
+        <button
+          className={`icon-btn row-fav ${plan.favorite ? 'is-fav' : ''}`}
+          aria-pressed={plan.favorite}
+          aria-label={plan.favorite ? `Quitar ${plan.title} de favoritos` : `Agregar ${plan.title} a favoritos`}
+          onClick={() => toggleFavorite(plan)}
+        >
+          <Heart size={16} strokeWidth={1.9} fill={plan.favorite ? 'currentColor' : 'none'} aria-hidden />
+        </button>
+        {done && plan.cover && <img className="row-thumb" src={plan.cover.url} alt="" />}
+      </div>
     </li>
   )
 }

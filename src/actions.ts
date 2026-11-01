@@ -1,3 +1,4 @@
+import { usePhotoPrompt } from './photoPrompt'
 import { usePlans } from './store'
 import { useToast } from './toast'
 import type { Plan } from './types'
@@ -6,6 +7,7 @@ import type { Plan } from './types'
 export function usePlanActions() {
   const { toggleDone, markRepeated, toggleRepeat, toggleFavorite, updatePlan } = usePlans()
   const toast = useToast()
+  const promptPhotos = usePhotoPrompt()
 
   const restore = (prev: Plan) => () =>
     updatePlan(prev.id, {
@@ -15,16 +17,20 @@ export function usePlanActions() {
       timesDone: prev.timesDone,
     })
 
+  const uploadAction = (plan: Plan) => ({ label: 'Subir fotos', run: () => promptPhotos(plan.id, plan.title) })
+
   return {
     toggleDone: async (plan: Plan) => {
       const wasRepeating = plan.status === 'pendiente' && plan.repeat
       await toggleDone(plan)
-      const message =
-        plan.status === 'realizado'
-          ? 'Volvió a pendientes'
-          : wasRepeating
-            ? `¡Ya van ${plan.timesDone + 1} veces! Sube las fotos de hoy al álbum cuando quieras.`
-            : '¡Cumplido!'
+      if (wasRepeating) {
+        toast(`¡Ya van ${plan.timesDone + 1} veces! Sigue pendiente, lista para la próxima.`, [
+          { label: 'Deshacer', run: restore(plan) },
+          uploadAction(plan),
+        ])
+        return
+      }
+      const message = plan.status === 'realizado' ? 'Volvió a pendientes' : '¡Cumplido!'
       toast(message, { label: 'Deshacer', run: restore(plan) })
     },
     toggleRepeat: async (plan: Plan) => {
@@ -43,7 +49,7 @@ export function usePlanActions() {
     },
     markRepeated: async (plan: Plan) => {
       await markRepeated(plan)
-      toast(`¡Ya van ${plan.timesDone + 1} veces!`, { label: 'Deshacer', run: restore(plan) })
+      toast(`¡Ya van ${plan.timesDone + 1} veces!`, [{ label: 'Deshacer', run: restore(plan) }, uploadAction(plan)])
     },
   }
 }

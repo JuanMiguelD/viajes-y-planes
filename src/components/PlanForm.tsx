@@ -109,17 +109,52 @@ export function PlanForm({ plan, onClose }: { plan?: Plan; onClose: () => void }
             </div>
           </fieldset>
 
-          <label className="field">
-            <span className="field-label">
-              Fecha límite <span className="optional">opcional</span>
-            </span>
-            <input
-              className="input input-date"
-              type="date"
-              value={form.deadline ?? ''}
-              onChange={(e) => set('deadline', e.target.value || null)}
-            />
-          </label>
+          <fieldset className="field">
+            <legend className="field-label">¿Ya lo hicimos?</legend>
+            <label className="check-toggle">
+              <input
+                type="checkbox"
+                checked={form.status === 'realizado'}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setForm((f) => ({
+                    ...f,
+                    status: checked ? 'realizado' : 'pendiente',
+                    completedAt: checked ? (f.completedAt ?? today()) : null,
+                    timesDone: checked ? Math.max(f.timesDone, 1) : 0,
+                  }))
+                  setError(null)
+                }}
+              />
+              Ya pasó, quiero anotarlo como cumplido
+            </label>
+          </fieldset>
+
+          {form.status === 'realizado' ? (
+            <label className="field">
+              <span className="field-label">¿Qué día lo hicimos?</span>
+              <input
+                className="input input-date"
+                type="date"
+                max={today()}
+                value={form.completedAt ?? ''}
+                aria-invalid={Boolean(error && !form.completedAt)}
+                onChange={(e) => set('completedAt', e.target.value || null)}
+              />
+            </label>
+          ) : (
+            <label className="field">
+              <span className="field-label">
+                Fecha límite <span className="optional">opcional</span>
+              </span>
+              <input
+                className="input input-date"
+                type="date"
+                value={form.deadline ?? ''}
+                onChange={(e) => set('deadline', e.target.value || null)}
+              />
+            </label>
+          )}
 
           <fieldset className="field">
             <legend className="field-label">

@@ -9,10 +9,11 @@ import { PlanMarkers } from '../components/PlanMarkers'
 import { TagIcon } from '../components/TagIcon'
 import { mapsEnabled } from '../maps'
 import { usePlans } from '../store'
-import { CATEGORY_LABEL, TAG_LABEL, type Plan, type Tag } from '../types'
+import { CATEGORY_LABEL, TAG_LABEL, type Category, type Plan, type Tag } from '../types'
 import { longDate, plural } from '../utils'
 
 type Filter = 'todos' | 'realizado' | 'pendiente'
+type CategoryFilter = 'todos' | Category
 
 /** Encuadra los planes visibles al cambiar el filtro, o vuela al plan enfocado. */
 function Camera({ plans, focus }: { plans: Plan[]; focus: Plan | null }) {
@@ -106,6 +107,7 @@ export function MapView({
 }) {
   const { plans, getPlan } = usePlans()
   const [filter, setFilter] = useState<Filter>('todos')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('todos')
   const [tagFilter, setTagFilter] = useState<Set<Tag>>(() => new Set())
   const [selectedId, setSelectedId] = useState<string | null>(focusId)
   const [prevFocus, setPrevFocus] = useState(focusId)
@@ -116,13 +118,17 @@ export function MapView({
   }
 
   const located = useMemo(() => plans.filter((p) => p.place), [plans])
-  const visible = located.filter((p) => filter === 'todos' || p.status === filter).filter((p) => tagFilter.size === 0 || (p.tag && tagFilter.has(p.tag)))
-  const doneCount = located.filter((p) => p.status === 'realizado').length
+  const byCategory = located.filter((p) => categoryFilter === 'todos' || p.category === categoryFilter)
+  const visible = byCategory
+    .filter((p) => filter === 'todos' || p.status === filter)
+    .filter((p) => tagFilter.size === 0 || (p.tag && tagFilter.has(p.tag)))
+  const doneCount = byCategory.filter((p) => p.status === 'realizado').length
+  const categoryCount = (f: CategoryFilter) => located.filter((p) => f === 'todos' || p.category === f).length
   const tagCounts = useMemo(() => {
     const counts = new Map<Tag, number>()
-    for (const p of located) if (p.tag) counts.set(p.tag, (counts.get(p.tag) ?? 0) + 1)
+    for (const p of byCategory) if (p.tag) counts.set(p.tag, (counts.get(p.tag) ?? 0) + 1)
     return counts
-  }, [located])
+  }, [byCategory])
   const selected = selectedId ? (getPlan(selectedId) ?? null) : null
   const focus = focusId ? (getPlan(focusId) ?? null) : null
 
@@ -151,14 +157,23 @@ export function MapView({
         <div className="filter filter-solid" role="tablist" aria-label="Mostrar">
           {(
             [
-              ['todos', 'Todos', located.length],
+              ['todos', 'Todos', byCategory.length],
               ['realizado', 'Cumplidos', doneCount],
-              ['pendiente', 'Pendientes', located.length - doneCount],
+              ['pendiente', 'Pendientes', byCategory.length - doneCount],
             ] as [Filter, string, number][]
           ).map(([f, label, n]) => (
             <button key={f} role="tab" aria-selected={filter === f} onClick={() => setFilter(f)}>
               {label}
               <span className="filter-count">{n}</span>
+            </button>
+          ))}
+        </div>
+        <div className="filter filter-solid" role="tablist" aria-label="Filtrar por quién">
+          {(['todos', 'pareja', 'amigos'] as CategoryFilter[]).map((f) => (
+            <button key={f} role="tab" aria-selected={categoryFilter === f} onClick={() => setCategoryFilter(f)}>
+              {f !== 'todos' && <CategoryIcon category={f} size={13} />}
+              {f === 'todos' ? 'Todos' : CATEGORY_LABEL[f]}
+              <span className="filter-count">{categoryCount(f)}</span>
             </button>
           ))}
         </div>

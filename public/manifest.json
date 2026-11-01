@@ -1,0 +1,11 @@
+{
+  "name": "Nuestros planes",
+  "short_name": "Planes",
+  "description": "Lo que queremos hacer juntos, los lugares que ya conocimos y las fotos de cada momento.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf8f0",
+  "theme_color": "#8a5a34",
+  "lang": "es",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

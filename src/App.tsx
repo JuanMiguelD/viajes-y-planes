@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { BookHeart, Heart, ListChecks, LogOut, Map as MapIcon, Plus, Repeat2, type LucideIcon } from 'lucide-react'
+import { Bell, BookHeart, Heart, ListChecks, LogOut, Map as MapIcon, Plus, type LucideIcon } from 'lucide-react'
 import { AuthGate } from './components/AuthGate'
 import { PlanDetail } from './components/PlanDetail'
 import { PlanForm } from './components/PlanForm'
+import { ReminderSettings } from './components/ReminderSettings'
 import { firebaseEnabled } from './firebase'
 import { GOOGLE_MAPS_API_KEY, mapsEnabled } from './maps'
+import { checkReminders } from './notifications'
+import { PhotoPromptProvider } from './photoPrompt'
 import { PlansProvider, usePlans } from './store'
 import { ToastProvider } from './toast'
+import usImage from './components/us.png'
 import { AlbumView } from './views/AlbumView'
 import { MapView } from './views/MapView'
 import { PlansView } from './views/PlansView'
@@ -18,7 +22,7 @@ type Tab = 'planes' | 'mapa' | 'repetir' | 'recuerdos'
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'planes', label: 'Planes', icon: ListChecks },
   { id: 'mapa', label: 'Mapa', icon: MapIcon },
-  { id: 'repetir', label: 'Para repetir', icon: Repeat2 },
+  { id: 'repetir', label: 'Favoritos', icon: Heart },
   { id: 'recuerdos', label: 'Álbum', icon: BookHeart },
 ]
 
@@ -33,12 +37,20 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [mapFocus, setMapFocus] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
+  const [editingReminders, setEditingReminders] = useState(false)
 
   useEffect(() => {
     const onHash = () => setTabState(tabFromHash())
     window.addEventListener('hashchange', onHash)
     return () => window.removeEventListener('hashchange', onHash)
   }, [])
+
+  // Revisa si toca avisar del próximo plan con fecha: al entrar y cada 30 minutos mientras la app está abierta.
+  useEffect(() => {
+    checkReminders(plans)
+    const id = window.setInterval(() => checkReminders(plans), 30 * 60 * 1000)
+    return () => window.clearInterval(id)
+  }, [plans])
 
   const setTab = (t: Tab) => {
     if (t !== 'mapa') setMapFocus(null)
@@ -57,13 +69,14 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
 
   const counts: Partial<Record<Tab, number>> = {
     planes: plans.filter((p) => p.status === 'pendiente').length,
-    repetir: plans.filter((p) => p.status === 'realizado' && p.repeat).length,
+    repetir: plans.filter((p) => p.favorite || (p.status === 'realizado' && p.repeat)).length,
   }
 
   return (
     <div className={`shell shell-${tab}`}>
       <header className="masthead">
         <span className="brand">
+          <img className="brand-photo" src={usImage} alt="" aria-hidden />
           <Heart className="icon-heart" size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
           Nuestros planes
         </span>
@@ -95,6 +108,10 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
         {!firebaseEnabled && (
           <p className="local-note">Modo local: los planes y las fotos solo se guardan en este navegador.</p>
         )}
+        <button className="text-btn" onClick={() => setEditingReminders(true)}>
+          <Bell size={15} strokeWidth={1.75} aria-hidden />
+          Recordatorios
+        </button>
         {onLogout && (
           <button className="text-btn" onClick={onLogout}>
             <LogOut size={15} strokeWidth={1.75} aria-hidden />
@@ -144,6 +161,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
 
       {selected && <PlanDetail planId={selected} onClose={closeDetail} onShowOnMap={showOnMap} />}
       {creating && <PlanForm onClose={closeForm} />}
+      {editingReminders && <ReminderSettings onClose={() => setEditingReminders(false)} />}
     </div>
   )
 }
@@ -159,7 +177,9 @@ export default function App() {
         <AuthGate>
           {(logout) => (
             <PlansProvider>
-              <Shell onLogout={logout} />
+              <PhotoPromptProvider>
+                <Shell onLogout={logout} />
+              </PhotoPromptProvider>
             </PlansProvider>
           )}
         </AuthGate>

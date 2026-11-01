@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, MapPin, Pencil, Repeat2, Trash2, Undo2, X } from 'lucide-react'
+import { Check, Heart, MapPin, Pencil, Repeat2, Trash2, Undo2, X } from 'lucide-react'
 import { usePlanActions } from '../actions'
 import { usePlans } from '../store'
 import { useToast } from '../toast'
@@ -23,7 +23,7 @@ export function PlanDetail({
   onShowOnMap: (id: string) => void
 }) {
   const { getPlan, deletePlan } = usePlans()
-  const { toggleDone, toggleRepeat } = usePlanActions()
+  const { toggleDone, toggleRepeat, toggleFavorite } = usePlanActions()
   const toast = useToast()
   const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete'>('view')
   const plan = getPlan(planId)
@@ -146,6 +146,14 @@ export function PlanDetail({
                 ¡Lo hicimos!
               </button>
             )}
+            <button
+              className={`btn btn-secondary ${plan.favorite ? 'is-heart' : ''}`}
+              aria-pressed={plan.favorite}
+              onClick={() => toggleFavorite(plan)}
+            >
+              <Heart size={16} strokeWidth={1.9} fill={plan.favorite ? 'currentColor' : 'none'} aria-hidden />
+              {plan.favorite ? 'En favoritos' : 'Favorito'}
+            </button>
           </div>
         </div>
 
