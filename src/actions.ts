@@ -5,7 +5,7 @@ import type { Plan } from './types'
 
 /** Acciones de estado con confirmación y "Deshacer", compartidas por todas las secciones. */
 export function usePlanActions() {
-  const { toggleDone, markRepeated, toggleRepeat, toggleFavorite, updatePlan } = usePlans()
+  const { toggleDone, toggleRepeat, toggleFavorite, updatePlan, repeatPlan } = usePlans()
   const toast = useToast()
   const promptPhotos = usePhotoPrompt()
 
@@ -21,17 +21,16 @@ export function usePlanActions() {
 
   return {
     toggleDone: async (plan: Plan) => {
-      const wasRepeating = plan.status === 'pendiente' && plan.repeat
+      const wasPending = plan.status === 'pendiente'
       await toggleDone(plan)
-      if (wasRepeating) {
-        toast(`¡Ya van ${plan.timesDone + 1} veces! Sigue pendiente, lista para la próxima.`, [
+      if (wasPending) {
+        toast('¡Cumplido! Sube las fotos de hoy cuando quieras.', [
           { label: 'Deshacer', run: restore(plan) },
           uploadAction(plan),
         ])
         return
       }
-      const message = plan.status === 'realizado' ? 'Volvió a pendientes' : '¡Cumplido!'
-      toast(message, { label: 'Deshacer', run: restore(plan) })
+      toast('Volvió a pendientes', { label: 'Deshacer', run: restore(plan) })
     },
     toggleRepeat: async (plan: Plan) => {
       await toggleRepeat(plan)
@@ -47,9 +46,10 @@ export function usePlanActions() {
         run: () => updatePlan(plan.id, { favorite: plan.favorite }),
       })
     },
-    markRepeated: async (plan: Plan) => {
-      await markRepeated(plan)
-      toast(`¡Ya van ${plan.timesDone + 1} veces!`, [{ label: 'Deshacer', run: restore(plan) }, uploadAction(plan)])
+    repeatPlan: async (plan: Plan): Promise<string> => {
+      const id = await repeatPlan(plan)
+      toast(`Nueva tarjeta para repetir "${plan.title}". Ponle la fecha y los detalles.`)
+      return id
     },
   }
 }

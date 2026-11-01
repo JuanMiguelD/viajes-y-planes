@@ -212,22 +212,34 @@ function AlbumPage({ plan, onBack, onOpenPlan }: { plan: Plan; onBack: () => voi
   )
 }
 
-/** Álbum: cada plan cumplido es una polaroid, agrupadas por mes. */
+type GroupBy = 'fecha' | 'lugar'
+
+/** Álbum: cada plan cumplido es una polaroid, agrupadas por mes o, si repetimos un lugar varias veces, por lugar. */
 export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string) => void; onGoToPlans: () => void }) {
   const { plans, getPlan } = usePlans()
   const [pageId, setPageId] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
+  const [groupBy, setGroupBy] = useState<GroupBy>('fecha')
   const page = pageId ? getPlan(pageId) : undefined
 
   const done = plans
     .filter((p) => p.status === 'realizado' && p.completedAt)
     .sort((a, b) => b.completedAt!.localeCompare(a.completedAt!))
-  const months = new Map<string, Plan[]>()
-  for (const p of done) {
-    const key = p.completedAt!.slice(0, 7)
-    months.set(key, [...(months.get(key) ?? []), p])
-  }
   const totalPhotos = done.reduce((n, p) => n + p.photoCount, 0)
+
+  // Por fecha: un grupo por mes. Por lugar: un grupo por lugar (o título si no tiene lugar), para
+  // ver juntas todas las veces que repetimos algo, sin importar cuándo fue cada una.
+  const groupMap = new Map<string, Plan[]>()
+  for (const p of done) {
+    const key = groupBy === 'fecha' ? p.completedAt!.slice(0, 7) : (p.place?.name ?? p.title)
+    groupMap.set(key, [...(groupMap.get(key) ?? []), p])
+  }
+  const groups = [...groupMap].map(([key, items]) => ({
+    key,
+    title: groupBy === 'fecha' ? monthTitle(`${key}-01`) : key,
+    items,
+  }))
+  if (groupBy === 'lugar') groups.sort((a, b) => b.items[0].completedAt!.localeCompare(a.items[0].completedAt!))
 
   const picker = picking && (
     <UploadPicker
@@ -271,34 +283,51 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
           </button>
         </div>
       ) : (
-        [...months].map(([key, items]) => (
-          <section key={key} className="month">
-            <h2 className="month-title">{monthTitle(`${key}-01`)}</h2>
-            <ul className="album-grid">
-              {items.map((p) => (
-                <li key={p.id}>
-                  <button className="album-item" onClick={() => setPageId(p.id)}>
-                    <Polaroid
-                      id={p.id}
-                      stacked={p.photoCount > 1}
-                      caption={p.title}
-                      note={p.photoCount > 0 ? `${shortDate(p.completedAt!)}, ${plural(p.photoCount, 'foto', 'fotos')}` : shortDate(p.completedAt!)}
-                    >
-                      {p.cover ? (
-                        <img src={p.cover.url} alt="" loading="lazy" />
-                      ) : (
-                        <span className="polaroid-empty">
-                          <ImagePlus size={22} strokeWidth={1.5} aria-hidden />
-                          Sin fotos aún
-                        </span>
-                      )}
-                    </Polaroid>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+        <>
+          <div className="filter" role="tablist" aria-label="Agrupar álbum">
+            <button role="tab" aria-selected={groupBy === 'fecha'} onClick={() => setGroupBy('fecha')}>
+              Por fecha
+            </button>
+            <button role="tab" aria-selected={groupBy === 'lugar'} onClick={() => setGroupBy('lugar')}>
+              Por lugar
+            </button>
+          </div>
+          {groups.map(({ key, title, items }) => (
+            <section key={key} className="month">
+              <h2 className="month-title">
+                {title}
+                {groupBy === 'lugar' && <span className="month-count">{plural(items.length, 'vez', 'veces')}</span>}
+              </h2>
+              <ul className="album-grid">
+                {items.map((p) => (
+                  <li key={p.id}>
+                    <button className="album-item" onClick={() => setPageId(p.id)}>
+                      <Polaroid
+                        id={p.id}
+                        stacked={p.photoCount > 1}
+                        caption={p.title}
+                        note={
+                          p.photoCount > 0
+                            ? `${shortDate(p.completedAt!)}, ${plural(p.photoCount, 'foto', 'fotos')}`
+                            : shortDate(p.completedAt!)
+                        }
+                      >
+                        {p.cover ? (
+                          <img src={p.cover.url} alt="" loading="lazy" />
+                        ) : (
+                          <span className="polaroid-empty">
+                            <ImagePlus size={22} strokeWidth={1.5} aria-hidden />
+                            Sin fotos aún
+                          </span>
+                        )}
+                      </Polaroid>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </>
       )}
       {picker}
     </div>

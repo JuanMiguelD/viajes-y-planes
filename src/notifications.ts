@@ -1,10 +1,13 @@
 import type { Plan } from './types'
-import { daysUntil, datePhrase, longDate, today } from './utils'
+import { daysUntil, datePhrase, longDate } from './utils'
 
 const TEMPLATE_KEY = 'viajesyplanes.reminder.template'
 const NOTIFIED_KEY = 'viajesyplanes.reminder.notified'
 
 export const DEFAULT_TEMPLATE = '💛 Recordatorio: {titulo} es {cuando}.'
+
+/** Cuántos días antes de la fecha avisamos del próximo plan. */
+export const REMINDER_DAYS_BEFORE = 4
 
 export function notificationsSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window
@@ -58,15 +61,16 @@ async function fire(plan: Plan): Promise<void> {
 }
 
 /**
- * Revisa el próximo plan con fecha y avisa si toca: el día de antes, el mismo día, o si ya venció
- * y seguimos sin marcarlo. Como máximo un aviso por plan y día, guardado en este navegador.
+ * Revisa el próximo plan con fecha y avisa una sola vez cuando falten 4 días o menos (incluye si
+ * ya venció y seguimos sin marcarlo). La clave combina el plan y su fecha, así que si la cambiamos
+ * el aviso vuelve a estar disponible.
  */
 export async function checkReminders(plans: Plan[]): Promise<void> {
   if (!notificationsSupported() || Notification.permission !== 'granted') return
   const next = nextUpcoming(plans)
   if (!next?.deadline) return
-  if (daysUntil(next.deadline) > 1) return
-  const key = `${next.id}:${today()}`
+  if (daysUntil(next.deadline) > REMINDER_DAYS_BEFORE) return
+  const key = `${next.id}:${next.deadline}`
   if (notifiedSet().has(key)) return
   markNotified(key)
   await fire(next)

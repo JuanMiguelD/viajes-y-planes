@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Bell, BookHeart, Heart, ListChecks, LogOut, Map as MapIcon, Plus, type LucideIcon } from 'lucide-react'
+import { Bell, BookHeart, CalendarDays, Heart, ListChecks, LogOut, Map as MapIcon, Plus, type LucideIcon } from 'lucide-react'
 import { AuthGate } from './components/AuthGate'
 import { PlanDetail } from './components/PlanDetail'
 import { PlanForm } from './components/PlanForm'
@@ -13,16 +13,18 @@ import { PlansProvider, usePlans } from './store'
 import { ToastProvider } from './toast'
 import usImage from './components/us.png'
 import { AlbumView } from './views/AlbumView'
+import { CalendarView } from './views/CalendarView'
 import { MapView } from './views/MapView'
 import { PlansView } from './views/PlansView'
 import { RepeatView } from './views/RepeatView'
 
-type Tab = 'planes' | 'mapa' | 'repetir' | 'recuerdos'
+type Tab = 'planes' | 'mapa' | 'repetir' | 'calendario' | 'recuerdos'
 
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'planes', label: 'Planes', icon: ListChecks },
   { id: 'mapa', label: 'Mapa', icon: MapIcon },
   { id: 'repetir', label: 'Favoritos', icon: Heart },
+  { id: 'calendario', label: 'Calendario', icon: CalendarDays },
   { id: 'recuerdos', label: 'Álbum', icon: BookHeart },
 ]
 
@@ -35,6 +37,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
   const { plans, error } = usePlans()
   const [tab, setTabState] = useState<Tab>(tabFromHash)
   const [selected, setSelected] = useState<string | null>(null)
+  const [editOnOpen, setEditOnOpen] = useState(false)
   const [mapFocus, setMapFocus] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [editingReminders, setEditingReminders] = useState(false)
@@ -64,6 +67,15 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
     setTab('mapa')
   }
 
+  // Abre un plan para verlo; "openForEdit" lo abre directo en edición (al repetir uno, por ejemplo).
+  const openView = useCallback((id: string) => {
+    setEditOnOpen(false)
+    setSelected(id)
+  }, [])
+  const openForEdit = useCallback((id: string) => {
+    setEditOnOpen(true)
+    setSelected(id)
+  }, [])
   const closeDetail = useCallback(() => setSelected(null), [])
   const closeForm = useCallback(() => setCreating(false), [])
 
@@ -149,17 +161,28 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
             </div>
           </div>
         ) : tab === 'planes' ? (
-          <PlansView onOpen={setSelected} onCreate={() => setCreating(true)} />
+          <PlansView onOpen={openView} onCreate={() => setCreating(true)} />
         ) : tab === 'mapa' ? (
-          <MapView focusId={mapFocus} onOpen={setSelected} onCreate={() => setCreating(true)} />
+          <MapView focusId={mapFocus} onOpen={openView} onCreate={() => setCreating(true)} />
         ) : tab === 'repetir' ? (
-          <RepeatView onOpen={setSelected} onGoToPlans={() => setTab('planes')} />
+          <RepeatView onOpen={openView} onOpenEdit={openForEdit} onGoToPlans={() => setTab('planes')} />
+        ) : tab === 'calendario' ? (
+          <CalendarView onOpen={openView} />
         ) : (
-          <AlbumView onOpenPlan={setSelected} onGoToPlans={() => setTab('planes')} />
+          <AlbumView onOpenPlan={openView} onGoToPlans={() => setTab('planes')} />
         )}
       </main>
 
-      {selected && <PlanDetail planId={selected} onClose={closeDetail} onShowOnMap={showOnMap} />}
+      {selected && (
+        <PlanDetail
+          key={selected}
+          planId={selected}
+          startInEdit={editOnOpen}
+          onClose={closeDetail}
+          onShowOnMap={showOnMap}
+          onRepeat={openForEdit}
+        />
+      )}
       {creating && <PlanForm onClose={closeForm} />}
       {editingReminders && <ReminderSettings onClose={() => setEditingReminders(false)} />}
     </div>

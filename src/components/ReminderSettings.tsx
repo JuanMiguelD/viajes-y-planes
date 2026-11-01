@@ -4,6 +4,7 @@ import {
   DEFAULT_TEMPLATE,
   getTemplate,
   notificationsSupported,
+  REMINDER_DAYS_BEFORE,
   requestPermission,
   setTemplate,
 } from '../notifications'
@@ -53,8 +54,8 @@ export function ReminderSettings({ onClose }: { onClose: () => void }) {
             <p className="field-hint">Este navegador no admite notificaciones.</p>
           ) : permission === 'granted' ? (
             <p className="field-hint">
-              <Bell size={15} strokeWidth={1.75} aria-hidden /> Activadas: avisamos del próximo plan con fecha, un día
-              antes o el mismo día.
+              <Bell size={15} strokeWidth={1.75} aria-hidden /> Activadas: avisamos del próximo plan con fecha, {REMINDER_DAYS_BEFORE}{' '}
+              días antes.
             </p>
           ) : permission === 'denied' ? (
             <p className="field-hint">Están bloqueadas para este sitio. Actívalas desde los ajustes del navegador o del celular.</p>

@@ -10,13 +10,14 @@ interface PlansStore {
   loading: boolean
   error: string | null
   getPlan: (id: string) => Plan | undefined
-  addPlan: (input: PlanInput) => Promise<void>
+  addPlan: (input: PlanInput) => Promise<string>
   updatePlan: (id: string, patch: Partial<PlanInput>) => Promise<void>
   deletePlan: (id: string) => Promise<void>
   toggleDone: (plan: Plan) => Promise<void>
   toggleRepeat: (plan: Plan) => Promise<void>
   toggleFavorite: (plan: Plan) => Promise<void>
-  markRepeated: (plan: Plan) => Promise<void>
+  /** Crea una tarjeta nueva a partir de un plan cumplido, lista para ponerle la próxima fecha y detalles. */
+  repeatPlan: (plan: Plan) => Promise<string>
 }
 
 const PlansContext = createContext<PlansStore | null>(null)
@@ -71,10 +72,12 @@ export function PlansProvider({ children }: { children: ReactNode }) {
         return next
       })
 
-    const addPlan = async (input: PlanInput) => {
+    const addPlan = async (input: PlanInput): Promise<string> => {
       const data = { ...input, createdAt: Date.now() }
-      if (db) await addDoc(collection(db, 'plans'), data)
-      else writeLocal((prev) => [...prev, { ...data, id: crypto.randomUUID() }])
+      if (db) return (await addDoc(collection(db, 'plans'), data)).id
+      const id = crypto.randomUUID()
+      writeLocal((prev) => [...prev, { ...data, id }])
+      return id
     }
 
     const updatePlan = async (id: string, patch: Partial<PlanInput>) => {
@@ -105,18 +108,33 @@ export function PlansProvider({ children }: { children: ReactNode }) {
             timesDone: Math.max(0, plan.timesDone - 1),
           })
         }
-        // Un plan "para repetir" nunca se marca cumplido del todo: queda pendiente, listo para la próxima vez.
-        if (plan.repeat) return updatePlan(plan.id, { completedAt: today(), timesDone: plan.timesDone + 1 })
         return updatePlan(plan.id, { status: 'realizado', completedAt: today(), timesDone: plan.timesDone + 1 })
       },
-      toggleRepeat: (plan) => {
-        const repeat = !plan.repeat
-        // Al activarlo sobre un plan ya cumplido, vuelve a quedar pendiente (listo para repetirse).
-        if (repeat && plan.status === 'realizado') return updatePlan(plan.id, { repeat, status: 'pendiente' })
-        return updatePlan(plan.id, { repeat })
-      },
+      // Solo se usa para quitar la marca (el botón "Quitar"): repeatPlan es quien la activa, al crear la tarjeta siguiente.
+      toggleRepeat: (plan) => updatePlan(plan.id, { repeat: !plan.repeat }),
       toggleFavorite: (plan) => updatePlan(plan.id, { favorite: !plan.favorite }),
-      markRepeated: (plan) => updatePlan(plan.id, { completedAt: today(), timesDone: plan.timesDone + 1 }),
+      repeatPlan: async (plan) => {
+        // Las condiciones de volver cambian cada vez (otra fecha, otros detalles), así que cada
+        // repetición es una tarjeta nueva y propia, no una reescritura del plan ya cumplido.
+        const id = await addPlan({
+          title: plan.title,
+          description: plan.description,
+          category: plan.category,
+          status: 'pendiente',
+          repeat: true,
+          favorite: plan.favorite,
+          deadline: null,
+          place: plan.place,
+          tag: plan.tag,
+          completedAt: null,
+          timesDone: 0,
+          cover: null,
+          photoCount: 0,
+        })
+        // El plan cumplido deja de ser la "cabeza" activa de la serie: la nueva tarjeta la reemplaza.
+        if (plan.repeat) await updatePlan(plan.id, { repeat: false })
+        return id
+      },
     }
   }, [plans, loading, error])
 

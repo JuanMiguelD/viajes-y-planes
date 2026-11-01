@@ -51,9 +51,17 @@ function PlanCard({
   )
 }
 
-export function RepeatView({ onOpen, onGoToPlans }: { onOpen: (id: string) => void; onGoToPlans: () => void }) {
+export function RepeatView({
+  onOpen,
+  onOpenEdit,
+  onGoToPlans,
+}: {
+  onOpen: (id: string) => void
+  onOpenEdit: (id: string) => void
+  onGoToPlans: () => void
+}) {
   const { plans } = usePlans()
-  const { markRepeated, toggleRepeat, toggleFavorite, toggleDone } = usePlanActions()
+  const { repeatPlan, toggleRepeat, toggleFavorite, toggleDone } = usePlanActions()
 
   const favorites = plans.filter((p) => p.favorite)
   // Lo que más tiempo lleva sin repetirse, primero
@@ -120,7 +128,10 @@ export function RepeatView({ onOpen, onGoToPlans }: { onOpen: (id: string) => vo
                 when={plan.completedAt ? `Última vez ${since(plan.completedAt)}` : undefined}
                 actions={
                   <>
-                    <button className="btn btn-secondary btn-small" onClick={() => markRepeated(plan)}>
+                    <button
+                      className="btn btn-secondary btn-small"
+                      onClick={async () => onOpenEdit(await repeatPlan(plan))}
+                    >
                       ¡Lo repetimos!
                     </button>
                     <button className="text-btn" onClick={() => toggleRepeat(plan)}>

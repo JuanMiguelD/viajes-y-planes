@@ -15,17 +15,21 @@ import { TagIcon } from './TagIcon'
 /** Ficha de un plan. Lee el plan del store por id, así que siempre refleja el estado actual. */
 export function PlanDetail({
   planId,
+  startInEdit = false,
   onClose,
   onShowOnMap,
+  onRepeat,
 }: {
   planId: string
+  startInEdit?: boolean
   onClose: () => void
   onShowOnMap: (id: string) => void
+  onRepeat: (newPlanId: string) => void
 }) {
   const { getPlan, deletePlan } = usePlans()
-  const { toggleDone, toggleRepeat, toggleFavorite } = usePlanActions()
+  const { toggleDone, toggleRepeat, toggleFavorite, repeatPlan } = usePlanActions()
   const toast = useToast()
-  const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete'>('view')
+  const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete'>(startInEdit ? 'edit' : 'view')
   const plan = getPlan(planId)
 
   if (!plan) return null
@@ -128,12 +132,14 @@ export function PlanDetail({
             {done ? (
               <>
                 <button
-                  className={`btn ${plan.repeat ? 'btn-secondary is-on' : 'btn-primary'}`}
-                  aria-pressed={plan.repeat}
-                  onClick={() => toggleRepeat(plan)}
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    const newId = await repeatPlan(plan)
+                    onRepeat(newId)
+                  }}
                 >
                   <Repeat2 size={17} strokeWidth={1.9} aria-hidden />
-                  {plan.repeat ? 'Guardado para repetir' : 'Queremos repetirlo'}
+                  Queremos repetirlo
                 </button>
                 <button className="btn btn-quiet" onClick={() => toggleDone(plan)}>
                   <Undo2 size={16} strokeWidth={1.9} aria-hidden />
@@ -155,6 +161,14 @@ export function PlanDetail({
               {plan.favorite ? 'En favoritos' : 'Favorito'}
             </button>
           </div>
+          {done && plan.repeat && (
+            <p className="detail-hint">
+              Ya está guardado en "Favoritos y recurrentes", listo para repetirlo.{' '}
+              <button className="text-btn" onClick={() => toggleRepeat(plan)}>
+                Quitar
+              </button>
+            </p>
+          )}
         </div>
 
         {done ? (
