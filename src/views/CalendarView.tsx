@@ -7,9 +7,90 @@ import type { Plan } from '../types'
 import { longDate, monthTitle, today } from '../utils'
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+const MONTHS_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
 
 function pad(n: number): string {
   return String(n).padStart(2, '0')
+}
+
+/**
+ * Para llegar rápido a una fecha vieja sin tocar "mes anterior" un montón de veces: primero el año,
+ * luego el mes, y ya dentro del calendario se elige el día.
+ */
+function JumpPicker({
+  year,
+  month,
+  onPick,
+  onClose,
+}: {
+  year: number
+  month: number
+  onPick: (year: number, month: number) => void
+  onClose: () => void
+}) {
+  const [step, setStep] = useState<'year' | 'month'>('year')
+  const [pickYear, setPickYear] = useState(year)
+  const [rangeStart, setRangeStart] = useState(year - 5)
+
+  return (
+    <>
+      <div className="calendar-jump-scrim" onClick={onClose} />
+      <div className="calendar-jump" role="dialog" aria-label="Elegir año y mes">
+        {step === 'year' ? (
+          <>
+            <div className="calendar-jump-head">
+              <button type="button" onClick={() => setRangeStart((r) => r - 12)} aria-label="Años anteriores">
+                <ChevronLeft size={16} aria-hidden />
+              </button>
+              <span className="calendar-jump-title">
+                {rangeStart} – {rangeStart + 11}
+              </span>
+              <button type="button" onClick={() => setRangeStart((r) => r + 12)} aria-label="Años siguientes">
+                <ChevronRight size={16} aria-hidden />
+              </button>
+            </div>
+            <div className="calendar-jump-grid">
+              {Array.from({ length: 12 }, (_, i) => rangeStart + i).map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  className={y === year ? 'is-current' : ''}
+                  onClick={() => {
+                    setPickYear(y)
+                    setStep('month')
+                  }}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="calendar-jump-head">
+              <button type="button" onClick={() => setStep('year')} aria-label="Volver a elegir el año">
+                <ChevronLeft size={16} aria-hidden />
+              </button>
+              <span className="calendar-jump-title">{pickYear}</span>
+              <span style={{ width: 30 }} aria-hidden />
+            </div>
+            <div className="calendar-jump-grid">
+              {MONTHS_SHORT.map((m, i) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={i === month && pickYear === year ? 'is-current' : ''}
+                  onClick={() => onPick(pickYear, i)}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
 }
 
 interface DayCell {
@@ -115,6 +196,7 @@ export function CalendarView({ onOpen, onAddPlan }: { onOpen: (id: string) => vo
   const [year, setYear] = useState(() => new Date().getFullYear())
   const [month, setMonth] = useState(() => new Date().getMonth())
   const [openDay, setOpenDay] = useState<string | null>(null)
+  const [jumping, setJumping] = useState(false)
   const todayKey = today()
 
   const doneByDate = useMemo(() => {
@@ -161,10 +243,24 @@ export function CalendarView({ onOpen, onAddPlan }: { onOpen: (id: string) => vo
           <button type="button" onClick={prevMonth} aria-label="Mes anterior">
             <ChevronLeft size={18} strokeWidth={2} aria-hidden />
           </button>
-          <span className="calendar-month">{monthTitle(`${year}-${pad(month + 1)}-01`)}</span>
+          <button type="button" className="calendar-month-btn" onClick={() => setJumping(true)}>
+            {monthTitle(`${year}-${pad(month + 1)}-01`)}
+          </button>
           <button type="button" onClick={nextMonth} aria-label="Mes siguiente">
             <ChevronRight size={18} strokeWidth={2} aria-hidden />
           </button>
+          {jumping && (
+            <JumpPicker
+              year={year}
+              month={month}
+              onPick={(y, m) => {
+                setYear(y)
+                setMonth(m)
+                setJumping(false)
+              }}
+              onClose={() => setJumping(false)}
+            />
+          )}
         </div>
       </header>
 

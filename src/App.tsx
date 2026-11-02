@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
-import { Bell, BookHeart, CalendarDays, Heart, ListChecks, LogOut, Map as MapIcon, Plus, type LucideIcon } from 'lucide-react'
+import {
+  BookHeart,
+  CalendarDays,
+  Heart,
+  ListChecks,
+  LogOut,
+  Map as MapIcon,
+  Plus,
+  Settings as SettingsIcon,
+  type LucideIcon,
+} from 'lucide-react'
+import { AppSettingsProvider } from './appSettings'
 import { AuthGate } from './components/AuthGate'
 import { PlanDetail } from './components/PlanDetail'
 import { PlanForm } from './components/PlanForm'
-import { ReminderSettings } from './components/ReminderSettings'
+import { Settings } from './components/Settings'
 import { ConfirmRepeatProvider } from './confirmRepeat'
 import { firebaseEnabled } from './firebase'
 import { GOOGLE_MAPS_API_KEY, mapsEnabled } from './maps'
@@ -42,7 +53,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
   const [mapFocus, setMapFocus] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [createDate, setCreateDate] = useState<string | null>(null)
-  const [editingReminders, setEditingReminders] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     const onHash = () => setTabState(tabFromHash())
@@ -129,9 +140,9 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
         {!firebaseEnabled && (
           <p className="local-note">Modo local: los planes y las fotos solo se guardan en este navegador.</p>
         )}
-        <button className="text-btn" onClick={() => setEditingReminders(true)}>
-          <Bell size={15} strokeWidth={1.75} aria-hidden />
-          Recordatorios
+        <button className="text-btn" onClick={() => setShowSettings(true)}>
+          <SettingsIcon size={15} strokeWidth={1.75} aria-hidden />
+          Ajustes
         </button>
         {onLogout && (
           <button className="text-btn" onClick={onLogout}>
@@ -193,7 +204,7 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
         />
       )}
       {creating && <PlanForm initialDate={createDate ?? undefined} onClose={closeForm} />}
-      {editingReminders && <ReminderSettings onClose={() => setEditingReminders(false)} />}
+      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
     </div>
   )
 }
@@ -208,13 +219,17 @@ export default function App() {
       <ToastProvider>
         <AuthGate>
           {(logout) => (
-            <PlansProvider>
-              <PhotoPromptProvider>
-                <ConfirmRepeatProvider>
-                  <Shell onLogout={logout} />
-                </ConfirmRepeatProvider>
-              </PhotoPromptProvider>
-            </PlansProvider>
+            // AppSettingsProvider va dentro de AuthGate: su lectura en Firestore necesita la
+            // sesión iniciada (si se suscribe antes de iniciar sesión, las reglas la rechazan).
+            <AppSettingsProvider>
+              <PlansProvider>
+                <PhotoPromptProvider>
+                  <ConfirmRepeatProvider>
+                    <Shell onLogout={logout} />
+                  </ConfirmRepeatProvider>
+                </PhotoPromptProvider>
+              </PlansProvider>
+            </AppSettingsProvider>
           )}
         </AuthGate>
       </ToastProvider>

@@ -1,12 +1,14 @@
 import { Check, Heart, MapPin, Repeat2 } from 'lucide-react'
 import { usePlanActions } from '../actions'
-import { CATEGORY_LABEL, TAG_LABEL, type Plan } from '../types'
+import { useTagLabel } from '../appSettings'
+import { CATEGORY_LABEL, type Plan } from '../types'
 import { deadlineLabel, deadlineState, numericDate } from '../utils'
 import { CategoryIcon } from './CategoryIcon'
 import { TagIcon } from './TagIcon'
 
 export function PlanRow({ plan, onOpen }: { plan: Plan; onOpen: (id: string) => void }) {
   const { toggleDone, toggleFavorite } = usePlanActions()
+  const tagLabel = useTagLabel(plan.tag)
   const done = plan.status === 'realizado'
   const deadline = deadlineState(plan)
   const label = deadlineLabel(plan)
@@ -35,9 +37,9 @@ export function PlanRow({ plan, onOpen }: { plan: Plan; onOpen: (id: string) => 
             {CATEGORY_LABEL[plan.category]}
           </span>
           {plan.tag && (
-            <span className="meta-item" title={TAG_LABEL[plan.tag]}>
+            <span className="meta-item" title={tagLabel}>
               <TagIcon tag={plan.tag} size={13} />
-              {TAG_LABEL[plan.tag]}
+              {tagLabel}
             </span>
           )}
           {plan.place && (

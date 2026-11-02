@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Map as GoogleMap, useMap } from '@vis.gl/react-google-maps'
 import { Check, MapPin, X } from 'lucide-react'
 import { usePlanActions } from '../actions'
+import { useAppSettings, useTagLabel } from '../appSettings'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { DEFAULT_CENTER } from '../components/map'
 import { MAP_BASE_PROPS, useShowZoomControl } from '../components/mapStyle'
@@ -9,7 +10,7 @@ import { PlanMarkers } from '../components/PlanMarkers'
 import { TagIcon } from '../components/TagIcon'
 import { mapsEnabled } from '../maps'
 import { usePlans } from '../store'
-import { CATEGORY_LABEL, TAG_LABEL, type Category, type Plan, type Tag } from '../types'
+import { CATEGORY_LABEL, type Category, type Plan, type Tag } from '../types'
 import { longDate, plural } from '../utils'
 
 type Filter = 'todos' | 'realizado' | 'pendiente'
@@ -45,6 +46,7 @@ function Camera({ plans, focus }: { plans: Plan[]; focus: Plan | null }) {
 
 function SelectedPanel({ plan, onOpen, onClose }: { plan: Plan; onOpen: (id: string) => void; onClose: () => void }) {
   const { toggleDone } = usePlanActions()
+  const tagLabel = useTagLabel(plan.tag)
   const done = plan.status === 'realizado'
   return (
     <aside className="map-panel" aria-label={plan.title}>
@@ -60,7 +62,7 @@ function SelectedPanel({ plan, onOpen, onClose }: { plan: Plan; onOpen: (id: str
             <>
               {' · '}
               <TagIcon tag={plan.tag} size={14} />
-              {TAG_LABEL[plan.tag]}
+              {tagLabel}
             </>
           )}
         </p>
@@ -106,6 +108,7 @@ export function MapView({
   onCreate: () => void
 }) {
   const { plans, getPlan } = usePlans()
+  const { settings } = useAppSettings()
   const [filter, setFilter] = useState<Filter>('todos')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('todos')
   const [tagFilter, setTagFilter] = useState<Set<Tag>>(() => new Set())
@@ -182,7 +185,7 @@ export function MapView({
             {[...tagCounts.entries()].map(([tag, n]) => (
               <button key={tag} aria-pressed={tagFilter.has(tag)} onClick={() => toggleTag(tag)}>
                 <TagIcon tag={tag} size={13} />
-                {TAG_LABEL[tag]}
+                {settings.tags.find((t) => t.id === tag)?.label ?? tag}
                 <span className="filter-count">{n}</span>
               </button>
             ))}

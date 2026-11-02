@@ -408,10 +408,26 @@ img { display: block; }
 
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; margin-top: 14px; }
 .photo-grid:has(> :nth-child(3)) > :first-child { grid-column: span 2; grid-row: span 2; }
-.photo { aspect-ratio: 1; padding: 0; border: 0; background: var(--paper); overflow: hidden; cursor: zoom-in; }
+.photo-cell { position: relative; aspect-ratio: 1; background: var(--paper); overflow: hidden; }
+.photo { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
 .photo img { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.15s; }
 .photo:hover img { opacity: 0.9; }
 .photo-skeleton { aspect-ratio: 1; background: var(--paper); }
+.photo-delete {
+  position: absolute; top: 4px; left: 4px; z-index: 2;
+  display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%;
+  background: rgb(59 43 28 / 60%); color: #fff;
+}
+.photo-delete:hover { background: var(--danger); }
+.photo-confirm {
+  position: absolute; inset: 0; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: rgb(33 23 27 / 72%);
+}
+.photo-confirm button {
+  display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;
+  background: rgb(255 255 255 / 92%); color: var(--ink);
+}
+.photo-confirm button.danger { background: var(--danger); color: #fff; }
 
 .memories-empty {
   margin: 14px 24px 0; padding: 20px; border: 1px dashed var(--line-strong); border-radius: 8px;
@@ -431,6 +447,9 @@ img { display: block; }
 .viewer-count + * { margin-left: auto; }
 .viewer-icon { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: inherit; }
 .viewer-icon:hover { background: rgb(255 255 255 / 10%); }
+.viewer-icon.is-active { color: #ffc2d1; }
+.viewer-icon:disabled { cursor: default; }
+.viewer-icon:disabled:not(.is-active) { opacity: 0.5; }
 .viewer-confirm { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
 .viewer-confirm button { border: 0; background: none; color: inherit; font-weight: 600; padding: 6px 4px; }
 .viewer-confirm .danger { color: #f0a69e; }
@@ -506,6 +525,41 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height
 .tag-grid label.is-active { border-color: var(--coffee); box-shadow: inset 0 0 0 1px var(--coffee); background: var(--coffee-tint); color: var(--coffee-deep); font-weight: 600; }
 .tag-grid label:has(input:focus-visible) { outline: 2px solid var(--coffee); outline-offset: 2px; }
 
+.color-fields { display: flex; gap: 20px; flex-wrap: wrap; }
+.color-field { display: flex; flex-direction: column; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.color-field input[type='color'] {
+  width: 52px; height: 52px; padding: 0; border: 1px solid var(--line-strong); border-radius: 50%;
+  cursor: pointer; background: none;
+}
+.color-field input[type='color']::-webkit-color-swatch-wrapper { padding: 3px; }
+.color-field input[type='color']::-webkit-color-swatch { border: 0; border-radius: 50%; }
+
+.tag-label-list { display: flex; flex-direction: column; gap: 8px; }
+.tag-label-row { position: relative; display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.tag-label-row .input { height: 38px; }
+.tag-icon-btn {
+  display: grid; place-items: center; flex-shrink: 0; width: 38px; height: 38px; padding: 0;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: var(--white); color: var(--coffee-deep);
+}
+.tag-icon-btn:hover { border-color: var(--coffee); background: var(--coffee-tint); }
+
+.icon-picker-scrim { position: fixed; inset: 0; z-index: 970; background: transparent; }
+.icon-picker {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 980;
+  width: min(280px, calc(100vw - 48px)); padding: 10px; border-radius: 14px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgb(90 40 58 / 18%);
+  animation: rise 0.15s ease-out;
+}
+.icon-picker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-height: 220px; overflow-y: auto; }
+.icon-picker-grid button {
+  display: grid; place-items: center; aspect-ratio: 1; padding: 0; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--white); color: var(--ink-2);
+}
+.icon-picker-grid button:hover { border-color: var(--coffee); background: var(--coffee-tint); }
+.icon-picker-grid button.is-current {
+  border-color: var(--coffee); box-shadow: inset 0 0 0 1px var(--coffee); color: var(--coffee-deep); background: var(--coffee-tint);
+}
+
 .place-picker { display: flex; flex-direction: column; gap: 8px; }
 .search-field {
   display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px;
@@ -563,6 +617,7 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height
 
 .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 40px 32px; padding: 4px; }
 @media (max-width: 640px) { .album-grid { grid-template-columns: 1fr 1fr; gap: 28px 18px; } }
+.album-grid-general { margin-top: 32px; }
 .album-item { display: block; width: 100%; padding: 0; border: 0; background: none; text-align: left; }
 
 /* Polaroid: marco blanco, inclinación leve, pila detrás si hay varias fotos */
@@ -578,7 +633,12 @@ textarea.input { height: auto; padding: 10px 12px; resize: vertical; line-height
   box-shadow: 0 1px 2px rgb(90 40 58 / 10%), 0 4px 12px rgb(90 40 58 / 7%);
 }
 button:hover > .polaroid, .album-item:hover .polaroid { transform: rotate(0deg) translateY(-3px); box-shadow: 0 2px 4px rgb(90 40 58 / 10%), 0 12px 28px rgb(90 40 58 / 14%); }
-.polaroid-photo { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 2px; background: var(--paper); }
+.polaroid-photo { position: relative; display: block; aspect-ratio: 1; overflow: hidden; border-radius: 2px; background: var(--paper); }
+.cover-badge {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+  background: rgb(59 43 28 / 78%); color: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
 .polaroid-photo img { width: 100%; height: 100%; object-fit: cover; }
 .polaroid-caption {
   display: block; margin-top: 10px; font-family: var(--hand); font-weight: 700; font-size: 23px; line-height: 1.05; color: var(--ink);
@@ -605,7 +665,7 @@ button:hover > .polaroid, .album-item:hover .polaroid { transform: rotate(0deg) 
 .mosaic { columns: 3 220px; column-gap: 28px; margin-top: 32px; padding: 4px; }
 @media (max-width: 640px) { .mosaic { columns: 2; column-gap: 14px; } }
 .mosaic > li { break-inside: avoid; margin-bottom: 28px; }
-.mosaic button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
+.mosaic .photo-open { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
 .mosaic .polaroid { padding-bottom: 10px; }
 .mosaic .polaroid-photo { aspect-ratio: auto; }
 .mosaic .polaroid-photo img { height: auto; }
@@ -642,13 +702,41 @@ button:hover > .polaroid, .album-item:hover .polaroid { transform: rotate(0deg) 
 /* ---------- Calendario ---------- */
 
 .calendar-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-.calendar-nav { display: flex; align-items: center; gap: 10px; }
-.calendar-nav button {
+.calendar-nav { position: relative; display: flex; align-items: center; gap: 10px; }
+.calendar-nav > button:not(.calendar-month-btn) {
   display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
   border: 1px solid var(--line-strong); border-radius: 50%; background: var(--white); color: var(--ink-2);
 }
-.calendar-nav button:hover { border-color: var(--coffee); color: var(--coffee); }
-.calendar-month { min-width: 150px; text-align: center; font-weight: 700; font-size: 16px; color: var(--ink-2); }
+.calendar-nav > button:not(.calendar-month-btn):hover { border-color: var(--coffee); color: var(--coffee); }
+.calendar-month-btn {
+  min-width: 150px; text-align: center; font-weight: 700; font-size: 16px; color: var(--ink-2);
+  background: none; border: 1px solid transparent; border-radius: 10px; padding: 6px 10px; cursor: pointer;
+}
+.calendar-month-btn:hover { border-color: var(--line-strong); background: var(--white); }
+
+.calendar-jump-scrim { position: fixed; inset: 0; z-index: 950; background: transparent; }
+.calendar-jump {
+  position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 960;
+  width: min(320px, calc(100vw - 32px)); padding: 16px; border-radius: 16px;
+  background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgb(90 40 58 / 18%);
+  animation: rise 0.15s ease-out;
+}
+.calendar-jump-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.calendar-jump-head button {
+  display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--ink-2);
+}
+.calendar-jump-head button:hover { background: var(--paper); }
+.calendar-jump-title { font-weight: 700; font-size: 14.5px; color: var(--ink-2); }
+.calendar-jump-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.calendar-jump-grid button {
+  height: 40px; padding: 0; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--white); color: var(--ink-2); font-weight: 600; font-size: 14px;
+}
+.calendar-jump-grid button:hover { border-color: var(--coffee); background: var(--coffee-tint); }
+.calendar-jump-grid button.is-current {
+  border-color: var(--coffee); box-shadow: inset 0 0 0 1px var(--coffee); color: var(--coffee-deep); background: var(--coffee-tint);
+}
 
 .calendar-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 20px; font-size: 13px; color: var(--muted); }
 .calendar-legend span { display: inline-flex; align-items: center; gap: 6px; }
