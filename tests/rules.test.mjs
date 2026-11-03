@@ -41,6 +41,11 @@ for (const email of ALLOWED) {
       await assertSucceeds(setDoc(doc(db, 'plans/p2'), { title: 'Otro' }))
       await assertSucceeds(deleteDoc(doc(db, 'plans/p2')))
     })
+    test('lee y cambia los ajustes compartidos (config/settings)', async () => {
+      const db = as(email).firestore()
+      await assertSucceeds(setDoc(doc(db, 'config/settings'), { theme: 'cafe' }))
+      await assertSucceeds(getDoc(doc(db, 'config/settings')))
+    })
     test('pasa la comprobación de acceso del login', () =>
       assertSucceeds(getDoc(doc(as(email).firestore(), 'access/check'))))
     test('ve, sube y borra fotos', async () => {
@@ -88,6 +93,11 @@ for (const [who, ctx] of Object.entries(outsiders)) {
       await assertFails(getDoc(doc(db, 'plans/p1')))
       await assertFails(setDoc(doc(db, 'plans/p2'), { title: 'x' }))
       await assertFails(deleteDoc(doc(db, 'plans/p1')))
+    })
+    test('no lee ni cambia los ajustes compartidos', async () => {
+      const db = ctx().firestore()
+      await assertFails(getDoc(doc(db, 'config/settings')))
+      await assertFails(setDoc(doc(db, 'config/settings'), { theme: 'x' }))
     })
     test('falla la comprobación de acceso del login', () => assertFails(getDoc(doc(ctx().firestore(), 'access/check'))))
     test('no ve, sube ni borra fotos', async () => {
