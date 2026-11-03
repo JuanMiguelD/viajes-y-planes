@@ -43,3 +43,8 @@ El mapa también se tiñe: tierra beige, parques verde salvia y agua azul suave.
 - **Álbum** (lo más llamativo): fotos tipo polaroid con una ligera inclinación, el pie de foto escrito a mano y una pila de tarjetas cuando hay varias fotos. Cada plan tiene su página, con sus fotos en mosaico. Se pueden subir fotos desde el álbum eligiendo el plan.
 
 Formas: botones en píldora, campos y paneles con 12–20px de radio, y fotos con marco blanco. El movimiento solo responde a acciones del usuario, y se respeta `prefers-reduced-motion`.
+
+## Logo
+
+Una pareja de pingüinos tomados de la mano bajo un corazón rojo: él con copete y ojitos abiertos, ella con moñito rojo y ojitos cerrados de felicidad. Fondo crema. Es un dibujo original en SVG (`scripts/make-icons.py`) en dos versiones: `icon.svg` (esquinas redondeadas; pestaña del navegador y Android) e `icon-maskable.svg` (fondo completo; Android recorta la forma y el iPhone redondea solo). Solo se usa como ícono de la app: dentro de la app, la cabecera lleva la ilustración `us.png`.
+

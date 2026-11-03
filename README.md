@@ -26,17 +26,25 @@ Sin configurar Firebase funciona en **modo local**: los planes y las fotos se gu
 2. Activa **Authentication → Google**, **Firestore Database** y **Storage**. Ojo: desde 2024, Firebase pide el plan **Blaze** (con tarjeta) para usar Storage. Mientras no pasen de la cuota gratuita (5 GB de fotos) no cobra nada; conviene crear una alerta de presupuesto de 1 USD en Google Cloud para estar tranquilos.
 3. Añade una app web y copia su configuración: `cp .env.example .env.local` y rellena los valores.
 4. Crea la lista de acceso. En **Firestore Database → Datos**, crea la colección `config` con un documento de ID `acceso` y un campo `correos` de tipo **array** que tenga los dos correos de Google. Esta lista **no está en el código** (el repo es público): solo se edita desde la consola, y para dar o quitar acceso basta con cambiarla.
-5. Despliega las reglas:
-   ```bash
-   npx firebase-tools login
-   npx firebase-tools deploy --only firestore:rules,storage
-   ```
-   La primera vez, la CLI pide permiso para que las reglas de Storage puedan leer Firestore (las dos consultan la misma lista). Acéptalo.
-6. (Opcional) Publicar la app en Firebase Hosting:
-   ```bash
-   npm run build && npx firebase-tools deploy --only hosting
-   ```
-   Añade el dominio de Hosting en Authentication → Settings → Authorized domains si no aparece ya.
+5. Inicia sesión en la CLI de Firebase (viene con el proyecto): `npx firebase login`.
+
+## Publicar
+
+```bash
+npm run deploy
+```
+
+Publica la web y las reglas en `https://viajesyplanes-5ba1d.web.app`, siempre en este orden:
+
+1. Corre los tests de las reglas (`npm run test:rules`) en emuladores locales. Si alguno falla, no se publica nada.
+2. Revisa que `.env.local` tenga todas las variables y apunte al mismo proyecto (`scripts/check-deploy.mjs`), para no publicar por error una versión en modo local o sin mapa.
+3. Compila y sube.
+
+La primera vez que se publiquen las reglas de Storage en un proyecto nuevo, hazlo desde una terminal interactiva: la CLI pide permiso para que Storage pueda leer `config/acceso` en Firestore. Acéptalo.
+
+**Seguridad de lo publicado:** `firebase.json` define las cabeceras HTTP (CSP, anti-iframe, nosniff…). Si agregan un servicio externo nuevo (otra API, fuentes, imágenes de otro dominio), hay que permitirlo en la `Content-Security-Policy`, o el navegador lo bloqueará. La API key de Google Maps va dentro de la web por diseño: protégela en Google Cloud restringiéndola a los dominios publicados y **solo** a *Maps JavaScript API*.
+
+**Volver atrás:** en la consola de Firebase, *Hosting → Historial de versiones → Revertir* restaura la versión anterior de la web al instante.
 
 ## Colaborar (para la otra persona)
 
@@ -52,6 +60,6 @@ Para editar el código y probarlo en su computador:
    ```
 4. **Configuración**: crea `.env.local` con los mismos valores que tiene el dueño. Pásenselos por un canal privado (WhatsApp, en persona), **nunca** subiéndolos al repo. Sin ese archivo la app arranca en modo local, que también sirve para probar diseño.
 5. **Probar**: `npm run dev` y abrir `http://localhost:5173`. Para entrar con Google, su correo debe estar en `config/acceso`.
-6. **Desplegar reglas o la web** (opcional): el dueño la agrega al proyecto de Firebase en *Configuración del proyecto → Usuarios y permisos* con rol **Editor**. Después ella ejecuta `npx firebase-tools login`.
+6. **Desplegar reglas o la web** (opcional): el dueño la agrega al proyecto de Firebase en *Configuración del proyecto → Usuarios y permisos* con rol **Editor**. Después ella ejecuta `npx firebase login` y publica con `npm run deploy` desde `main` actualizado (`git pull`), nunca desde una copia vieja: publicar reemplaza la web, las cabeceras y las reglas por las de su carpeta.
 
 Cada uno trabaja en una rama (`git switch -c mi-cambio`) y abre un *pull request* para que el otro lo revise antes de unirlo a `main`.

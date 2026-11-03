@@ -3,6 +3,10 @@ import { coverFor, deletePhoto, listPhotos, uploadPhotos, type Photo } from './p
 import { usePlans } from './store'
 import type { Plan } from './types'
 
+/** Los mismos tipos que acepta storage.rules: fotos sí, SVG no (puede llevar scripts). */
+const PHOTO_TYPES = /^image\/(jpeg|png|webp|gif|heic|heif|avif)$/
+const isPhoto = (f: File) => PHOTO_TYPES.test(f.type)
+
 /** Carga las fotos de un plan y mantiene su portada y contador sincronizados en el documento del plan. */
 export function usePhotos(plan: Plan) {
   const { updatePlan } = usePlans()
@@ -43,7 +47,7 @@ export function usePhotos(plan: Plan) {
   }, [load])
 
   const upload = async (files: File[]) => {
-    const images = files.filter((f) => f.type.startsWith('image/'))
+    const images = files.filter(isPhoto)
     if (images.length === 0) return
     setUploading(images.length)
     setError(null)
@@ -69,7 +73,7 @@ export function usePhotos(plan: Plan) {
 export function useUploader() {
   const { updatePlan } = usePlans()
   return async (planId: string, files: File[]): Promise<number> => {
-    const images = files.filter((f) => f.type.startsWith('image/'))
+    const images = files.filter(isPhoto)
     if (images.length === 0) return 0
     await uploadPhotos(planId, images)
     const list = await listPhotos(planId)

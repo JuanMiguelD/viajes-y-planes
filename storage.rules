@@ -11,8 +11,9 @@ service firebase.storage {
     // Las fotos de cada plan viven en plans/{planId}/...
     match /plans/{planId}/{file} {
       allow read, delete: if isCouple();
+      // Solo fotos: SVG queda fuera porque puede llevar scripts.
       allow create, update: if isCouple()
-        && request.resource.contentType.matches('image/.*')
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif|heic|heif|avif)')
         && request.resource.size < 15 * 1024 * 1024;
     }
 

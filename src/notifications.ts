@@ -56,7 +56,7 @@ export function nextUpcoming(plans: Plan[]): Plan | null {
 async function fire(plan: Plan): Promise<void> {
   const body = fillTemplate(getTemplate(), plan)
   const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration().catch(() => undefined) : undefined
-  if (reg) await reg.showNotification('Nuestros planes', { body, tag: `plan-${plan.id}`, icon: '/favicon.svg' })
+  if (reg) await reg.showNotification('Nuestros planes', { body, tag: `plan-${plan.id}`, icon: '/icons/icon-192.png' })
   else new Notification('Nuestros planes', { body, tag: `plan-${plan.id}` })
 }
 
