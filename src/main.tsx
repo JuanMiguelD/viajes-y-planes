@@ -5,6 +5,10 @@ import '@fontsource/caveat/600.css'
 import '@fontsource/caveat/700.css'
 import './index.css'
 import App from './App.tsx'
+import { applyCachedTheme } from './appSettings.tsx'
+
+// Antes de montar, para que no haya un parpadeo con los colores por defecto.
+applyCachedTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

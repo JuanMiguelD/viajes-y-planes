@@ -19,6 +19,11 @@ service cloud.firestore {
       allow get: if isCouple();
     }
 
+    // Colores y etiquetas de tipo de lugar: compartidos entre los dos desde Ajustes.
+    match /config/settings {
+      allow read, write: if isCouple();
+    }
+
     // Todo lo demás, incluida config/acceso, queda cerrado para la app.
   }
 }

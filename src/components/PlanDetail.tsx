@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Check, Heart, MapPin, Pencil, Repeat2, Trash2, Undo2, X } from 'lucide-react'
 import { usePlanActions } from '../actions'
+import { useTagLabel } from '../appSettings'
 import { usePlans } from '../store'
 import { useToast } from '../toast'
-import { CATEGORY_LABEL, TAG_LABEL } from '../types'
+import { CATEGORY_LABEL } from '../types'
 import { daysUntil, deadlineState, longDate, plural, since } from '../utils'
 import { CategoryIcon } from './CategoryIcon'
 import { Gallery } from './Gallery'
@@ -31,6 +32,7 @@ export function PlanDetail({
   const toast = useToast()
   const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete'>(startInEdit ? 'edit' : 'view')
   const plan = getPlan(planId)
+  const tagLabel = useTagLabel(plan?.tag)
 
   if (!plan) return null
   if (mode === 'edit') return <PlanForm plan={plan} onClose={() => setMode('view')} />
@@ -77,7 +79,7 @@ export function PlanDetail({
               <>
                 {' · '}
                 <TagIcon tag={plan.tag} size={14} />
-                {TAG_LABEL[plan.tag]}
+                {tagLabel}
               </>
             )}
           </p>

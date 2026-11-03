@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { coverFor, deletePhoto, listPhotos, uploadPhotos, type Photo } from './photos'
+import { coverFor, coverFromPhoto, deletePhoto, listPhotos, uploadPhotos, type Photo } from './photos'
 import { usePlans } from './store'
 import type { Plan } from './types'
 
@@ -18,11 +18,22 @@ export function usePhotos(plan: Plan) {
   const sync = useCallback(
     async (list: Photo[]) => {
       setPhotos(list)
-      if (list.length !== photoCount || list[0]?.id !== cover?.id) {
-        await updatePlan(id, { cover: await coverFor(id, list), photoCount: list.length })
-      }
+      // La portada elegida (a mano o automática) se respeta mientras esa foto siga existiendo;
+      // solo se recalcula de la primera foto si no hay portada o si la que había se borró.
+      const coverStillThere = cover ? list.some((p) => p.id === cover.id) : false
+      const patch: { cover?: Photo | null; photoCount?: number } = {}
+      if (list.length !== photoCount) patch.photoCount = list.length
+      if (!coverStillThere) patch.cover = await coverFor(id, list)
+      if (Object.keys(patch).length > 0) await updatePlan(id, patch)
     },
-    [id, cover?.id, photoCount, updatePlan],
+    [id, cover, photoCount, updatePlan],
+  )
+
+  const setCover = useCallback(
+    async (photo: Photo) => {
+      await updatePlan(id, { cover: await coverFromPhoto(id, photo) })
+    },
+    [id, updatePlan],
   )
 
   // La carga solo depende del plan; sync cambia cada vez que se actualiza la portada
@@ -66,7 +77,7 @@ export function usePhotos(plan: Plan) {
     await sync(await listPhotos(id))
   }
 
-  return { photos, error, uploading, reload: load, upload, remove }
+  return { photos, error, uploading, reload: load, upload, remove, setCover }
 }
 
 /** Sube fotos a un plan desde fuera de su ficha (por ejemplo, desde el álbum) y actualiza su portada. */

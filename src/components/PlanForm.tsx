@@ -1,15 +1,14 @@
 import { useCallback, useState, type FormEvent } from 'react'
 import { X } from 'lucide-react'
+import { useAppSettings } from '../appSettings'
 import { usePlans } from '../store'
 import { useToast } from '../toast'
-import { CATEGORY_LABEL, TAG_LABEL, type Category, type Plan, type PlanInput, type Tag } from '../types'
+import { CATEGORY_LABEL, type Category, type Plan, type PlanInput } from '../types'
 import { today } from '../utils'
 import { CategoryIcon } from './CategoryIcon'
 import { PlacePicker } from './PlacePicker'
 import { Sheet } from './Sheet'
 import { TagIcon } from './TagIcon'
-
-const TAGS = Object.keys(TAG_LABEL) as Tag[]
 
 const EMPTY: PlanInput = {
   title: '',
@@ -36,6 +35,7 @@ function seedFromDate(date: string): PlanInput {
 export function PlanForm({ plan, initialDate, onClose }: { plan?: Plan; initialDate?: string; onClose: () => void }) {
   const { addPlan, updatePlan } = usePlans()
   const toast = useToast()
+  const { settings } = useAppSettings()
   const [form, setForm] = useState<PlanInput>(() => plan ?? (initialDate ? seedFromDate(initialDate) : EMPTY))
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -181,11 +181,11 @@ export function PlanForm({ plan, initialDate, onClose }: { plan?: Plan; initialD
                 <input type="radio" name="tag" checked={form.tag === null} onChange={() => set('tag', null)} />
                 Sin etiqueta
               </label>
-              {TAGS.map((t) => (
-                <label key={t} className={form.tag === t ? 'is-active' : ''}>
-                  <input type="radio" name="tag" checked={form.tag === t} onChange={() => set('tag', t)} />
-                  <TagIcon tag={t} size={15} />
-                  {TAG_LABEL[t]}
+              {settings.tags.map((t) => (
+                <label key={t.id} className={form.tag === t.id ? 'is-active' : ''}>
+                  <input type="radio" name="tag" checked={form.tag === t.id} onChange={() => set('tag', t.id)} />
+                  <TagIcon tag={t.id} size={15} />
+                  {t.label}
                 </label>
               ))}
             </div>

@@ -99,11 +99,17 @@ export async function deleteAllPhotos(planId: string): Promise<void> {
   await Promise.all(photos.map((p) => deletePhoto(p.id)))
 }
 
+/** Portada a guardar en el plan a partir de una foto puntual (la primera, o la que elijamos a mano). */
+export async function coverFromPhoto(planId: string, photo: Photo): Promise<Cover> {
+  if (storage) return photo
+  const local = (await localList(planId)).find((p) => p.id === photo.id)
+  if (!local) return photo
+  return { id: photo.id, url: await thumbnail(local.blob) }
+}
+
 /** Portada a guardar en el plan a partir de su primera foto. */
 export async function coverFor(planId: string, photos: Photo[]): Promise<Cover | null> {
   const first = photos[0]
   if (!first) return null
-  if (storage) return first
-  const local = (await localList(planId))[0]
-  return { id: first.id, url: await thumbnail(local.blob) }
+  return coverFromPhoto(planId, first)
 }

@@ -1,5 +1,5 @@
 import { useRef, useState, type DragEvent, type ReactNode } from 'react'
-import { ChevronLeft, ImagePlus, X } from 'lucide-react'
+import { Check, ChevronLeft, Image, ImagePlus, Trash2, X } from 'lucide-react'
 import { Polaroid } from '../components/Polaroid'
 import { Sheet } from '../components/Sheet'
 import { Viewer } from '../components/Viewer'
@@ -100,9 +100,10 @@ function UploadPicker({ onClose, onUploaded }: { onClose: () => void; onUploaded
 
 /** Página del álbum de un plan: todas sus fotos en mosaico, con su propio botón para subir más. */
 function AlbumPage({ plan, onBack, onOpenPlan }: { plan: Plan; onBack: () => void; onOpenPlan: (id: string) => void }) {
-  const { photos, error, uploading, reload, upload, remove } = usePhotos(plan)
+  const { photos, error, uploading, reload, upload, remove, setCover } = usePhotos(plan)
   const [open, setOpen] = useState<number | null>(null)
   const [dragging, setDragging] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
 
   const picker = (className: string, content: ReactNode) => (
     <label className={className}>
@@ -186,11 +187,37 @@ function AlbumPage({ plan, onBack, onOpenPlan }: { plan: Plan; onBack: () => voi
         <ul className="mosaic">
           {photos.map((p, i) => (
             <li key={p.id}>
-              <button onClick={() => setOpen(i)} aria-label={`Ver foto ${i + 1}`}>
-                <Polaroid id={p.id}>
+              <Polaroid id={p.id}>
+                <button className="photo-open" onClick={() => setOpen(i)} aria-label={`Ver foto ${i + 1}`}>
                   <img src={p.url} alt="" loading="lazy" />
-                </Polaroid>
-              </button>
+                </button>
+                {plan.cover?.id === p.id && (
+                  <span className="cover-badge" title="Portada">
+                    <Image size={12} strokeWidth={2} aria-hidden />
+                  </span>
+                )}
+                {confirmDelete === p.id ? (
+                  <div className="photo-confirm">
+                    <button onClick={() => setConfirmDelete(null)} aria-label="Cancelar">
+                      <X size={15} strokeWidth={2.4} />
+                    </button>
+                    <button
+                      className="danger"
+                      onClick={async () => {
+                        await remove(p.id)
+                        setConfirmDelete(null)
+                      }}
+                      aria-label="Confirmar eliminar foto"
+                    >
+                      <Check size={15} strokeWidth={2.8} />
+                    </button>
+                  </div>
+                ) : (
+                  <button className="photo-delete" onClick={() => setConfirmDelete(p.id)} aria-label="Eliminar foto">
+                    <Trash2 size={13} strokeWidth={2} />
+                  </button>
+                )}
+              </Polaroid>
             </li>
           ))}
           <li>
@@ -206,20 +233,36 @@ function AlbumPage({ plan, onBack, onOpenPlan }: { plan: Plan; onBack: () => voi
       )}
 
       {open !== null && photos && photos.length > 0 && (
-        <Viewer photos={photos} start={open} title={plan.title} onClose={() => setOpen(null)} onDelete={remove} />
+        <Viewer
+          photos={photos}
+          start={open}
+          title={plan.title}
+          coverId={plan.cover?.id}
+          onClose={() => setOpen(null)}
+          onDelete={remove}
+          onSetCover={setCover}
+        />
       )}
     </div>
   )
 }
 
-type GroupBy = 'fecha' | 'lugar'
+type GroupBy = 'general' | 'fecha' | 'lugar'
 
-/** Álbum: cada plan cumplido es una polaroid, agrupadas por mes o, si repetimos un lugar varias veces, por lugar. */
+/** Nota al pie de la polaroid: fecha, lugar (si no es el criterio de agrupación) y cuántas fotos. */
+function polaroidNote(p: Plan, groupBy: GroupBy): string {
+  const parts = [shortDate(p.completedAt!)]
+  if (groupBy !== 'lugar' && p.place) parts.push(p.place.name)
+  const note = parts.join(' · ')
+  return p.photoCount > 0 ? `${note}, ${plural(p.photoCount, 'foto', 'fotos')}` : note
+}
+
+/** Álbum: cada plan cumplido es una polaroid. General las junta todas, o se pueden agrupar por mes o por lugar. */
 export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string) => void; onGoToPlans: () => void }) {
   const { plans, getPlan } = usePlans()
   const [pageId, setPageId] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
-  const [groupBy, setGroupBy] = useState<GroupBy>('fecha')
+  const [groupBy, setGroupBy] = useState<GroupBy>('general')
   const page = pageId ? getPlan(pageId) : undefined
 
   const done = plans
@@ -230,9 +273,11 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
   // Por fecha: un grupo por mes. Por lugar: un grupo por lugar (o título si no tiene lugar), para
   // ver juntas todas las veces que repetimos algo, sin importar cuándo fue cada una.
   const groupMap = new Map<string, Plan[]>()
-  for (const p of done) {
-    const key = groupBy === 'fecha' ? p.completedAt!.slice(0, 7) : (p.place?.name ?? p.title)
-    groupMap.set(key, [...(groupMap.get(key) ?? []), p])
+  if (groupBy !== 'general') {
+    for (const p of done) {
+      const key = groupBy === 'fecha' ? p.completedAt!.slice(0, 7) : (p.place?.name ?? p.title)
+      groupMap.set(key, [...(groupMap.get(key) ?? []), p])
+    }
   }
   const groups = [...groupMap].map(([key, items]) => ({
     key,
@@ -285,6 +330,9 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
       ) : (
         <>
           <div className="filter" role="tablist" aria-label="Agrupar álbum">
+            <button role="tab" aria-selected={groupBy === 'general'} onClick={() => setGroupBy('general')}>
+              General
+            </button>
             <button role="tab" aria-selected={groupBy === 'fecha'} onClick={() => setGroupBy('fecha')}>
               Por fecha
             </button>
@@ -292,41 +340,53 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
               Por lugar
             </button>
           </div>
-          {groups.map(({ key, title, items }) => (
-            <section key={key} className="month">
-              <h2 className="month-title">
-                {title}
-                {groupBy === 'lugar' && <span className="month-count">{plural(items.length, 'vez', 'veces')}</span>}
-              </h2>
-              <ul className="album-grid">
-                {items.map((p) => (
-                  <li key={p.id}>
-                    <button className="album-item" onClick={() => setPageId(p.id)}>
-                      <Polaroid
-                        id={p.id}
-                        stacked={p.photoCount > 1}
-                        caption={p.title}
-                        note={
-                          p.photoCount > 0
-                            ? `${shortDate(p.completedAt!)}, ${plural(p.photoCount, 'foto', 'fotos')}`
-                            : shortDate(p.completedAt!)
-                        }
-                      >
-                        {p.cover ? (
-                          <img src={p.cover.url} alt="" loading="lazy" />
-                        ) : (
-                          <span className="polaroid-empty">
-                            <ImagePlus size={22} strokeWidth={1.5} aria-hidden />
-                            Sin fotos aún
-                          </span>
-                        )}
-                      </Polaroid>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          {groupBy === 'general' ? (
+            <ul className="album-grid album-grid-general">
+              {done.map((p) => (
+                <li key={p.id}>
+                  <button className="album-item" onClick={() => setPageId(p.id)}>
+                    <Polaroid id={p.id} stacked={p.photoCount > 1} caption={p.title} note={polaroidNote(p, groupBy)}>
+                      {p.cover ? (
+                        <img src={p.cover.url} alt="" loading="lazy" />
+                      ) : (
+                        <span className="polaroid-empty">
+                          <ImagePlus size={22} strokeWidth={1.5} aria-hidden />
+                          Sin fotos aún
+                        </span>
+                      )}
+                    </Polaroid>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            groups.map(({ key, title, items }) => (
+              <section key={key} className="month">
+                <h2 className="month-title">
+                  {title}
+                  {groupBy === 'lugar' && <span className="month-count">{plural(items.length, 'vez', 'veces')}</span>}
+                </h2>
+                <ul className="album-grid">
+                  {items.map((p) => (
+                    <li key={p.id}>
+                      <button className="album-item" onClick={() => setPageId(p.id)}>
+                        <Polaroid id={p.id} stacked={p.photoCount > 1} caption={p.title} note={polaroidNote(p, groupBy)}>
+                          {p.cover ? (
+                            <img src={p.cover.url} alt="" loading="lazy" />
+                          ) : (
+                            <span className="polaroid-empty">
+                              <ImagePlus size={22} strokeWidth={1.5} aria-hidden />
+                              Sin fotos aún
+                            </span>
+                          )}
+                        </Polaroid>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))
+          )}
         </>
       )}
       {picker}

@@ -1,6 +1,7 @@
 export type Category = 'pareja' | 'amigos'
 export type Status = 'pendiente' | 'realizado'
-export type Tag = 'restaurante' | 'cafeteria' | 'parque' | 'bar' | 'hotel' | 'playa' | 'museo' | 'mirador' | 'evento'
+/** Id de una etiqueta de tipo de lugar. La lista de etiquetas (nombre e ícono) vive en appSettings.tsx. */
+export type Tag = string
 
 export interface Place {
   name: string
@@ -42,16 +43,4 @@ export type PlanInput = Omit<Plan, 'id' | 'createdAt'>
 export const CATEGORY_LABEL: Record<Category, string> = {
   pareja: 'Los dos',
   amigos: 'Con amigos',
-}
-
-export const TAG_LABEL: Record<Tag, string> = {
-  restaurante: 'Restaurante',
-  cafeteria: 'Cafetería',
-  parque: 'Parque',
-  bar: 'Bar',
-  hotel: 'Hotel',
-  playa: 'Playa',
-  museo: 'Museo',
-  mirador: 'Mirador',
-  evento: 'Evento',
 }
