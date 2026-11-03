@@ -1,25 +1,29 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Estilo cálido de Google Maps a juego con la paleta de la app, en vez de las teselas
- * por defecto de Google (colores, iconos de negocio y transporte apagados).
+ * Estilo cálido de Google Maps a juego con la paleta de la app. Muestra negocios, calles y
+ * estaciones (para reconocer dónde queda cada cosa), con colores suaves para que los
+ * marcadores de nuestros planes sigan siendo lo que más resalta.
  */
 export const MAP_STYLES: google.maps.MapTypeStyle[] = [
   { elementType: 'geometry', stylers: [{ color: '#f6ecdd' }] },
   { elementType: 'labels.text.fill', stylers: [{ color: '#5d4631' }] },
   { elementType: 'labels.text.stroke', stylers: [{ color: '#fdf8f0' }] },
-  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-  { featureType: 'administrative', elementType: 'geometry', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#dfe6c8' }] },
-  { featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.icon', stylers: [{ saturation: -35 }, { lightness: 8 }] },
+  { featureType: 'administrative.land_parcel', stylers: [{ visibility: 'off' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#efe1c8' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#7a5c3e' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#dfe6c8' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#5f7041' }] },
   { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f1e3cc' }] },
   { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#e3ddbf' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#e9dcc4' }] },
-  { featureType: 'road', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#ddc89e' }] },
-  { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#8c7355' }] },
-  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#fffaf1' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e6d6b8' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8c7355' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#ecd9b0' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#d9c08f' }] },
+  { featureType: 'transit.line', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit.station', elementType: 'labels.text.fill', stylers: [{ color: '#7a5c3e' }] },
   { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#cfdfe6' }] },
   { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#5f7f90' }] },
 ]

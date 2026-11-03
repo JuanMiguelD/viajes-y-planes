@@ -102,7 +102,8 @@ export function Settings({ onClose }: { onClose: () => void }) {
   const save = async () => {
     setTemplate(template)
     const cleanTags = tags.map((t) => ({ ...t, label: t.label.trim() })).filter((t) => t.label)
-    const next: AppSettings = { theme: colors, tags: cleanTags }
+    // Conserva los demás ajustes compartidos (por ejemplo, el título del álbum)
+    const next: AppSettings = { ...settings, theme: colors, tags: cleanTags }
     await saveSettings(next)
     toast('Ajustes guardados')
     onClose()

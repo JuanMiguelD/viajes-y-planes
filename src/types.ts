@@ -7,6 +7,10 @@ export interface Place {
   name: string
   lat: number
   lng: number
+  /** Dirección completa (de Google u OpenStreetMap). Los planes antiguos no la tienen. */
+  address?: string | null
+  /** Id del lugar en Google, para abrir su ficha en Google Maps */
+  placeId?: string | null
 }
 
 export interface Plan {

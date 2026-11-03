@@ -42,7 +42,7 @@ Publica la web y las reglas en `https://viajesyplanes-5ba1d.web.app`, siempre en
 
 La primera vez que se publiquen las reglas de Storage en un proyecto nuevo, hazlo desde una terminal interactiva: la CLI pide permiso para que Storage pueda leer `config/acceso` en Firestore. Acéptalo.
 
-**Seguridad de lo publicado:** `firebase.json` define las cabeceras HTTP (CSP, anti-iframe, nosniff…). Si agregan un servicio externo nuevo (otra API, fuentes, imágenes de otro dominio), hay que permitirlo en la `Content-Security-Policy`, o el navegador lo bloqueará. La API key de Google Maps va dentro de la web por diseño: protégela en Google Cloud restringiéndola a los dominios publicados y **solo** a *Maps JavaScript API*.
+**Seguridad de lo publicado:** `firebase.json` define las cabeceras HTTP (CSP, anti-iframe, nosniff…). Si agregan un servicio externo nuevo (otra API, fuentes, imágenes de otro dominio), hay que permitirlo en la `Content-Security-Policy`, o el navegador lo bloqueará. La API key de Google Maps va dentro de la web por diseño: protégela en Google Cloud restringiéndola a los dominios publicados y **solo** a las tres APIs que usa la app: *Maps JavaScript API* (el mapa), *Places API (New)* (buscar lugares y negocios) y *Geocoding API* (la dirección de un punto tocado en el mapa). Si Places no está permitida, la búsqueda cae sola a OpenStreetMap.
 
 **Volver atrás:** en la consola de Firebase, *Hosting → Historial de versiones → Revertir* restaura la versión anterior de la web al instante.
 

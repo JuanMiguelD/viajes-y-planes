@@ -24,9 +24,16 @@ export const DEFAULT_TAGS: TagDef[] = [
 export interface AppSettings {
   theme: ThemeColors
   tags: TagDef[]
+  /** Título que lleva la tapa del álbum */
+  albumTitle: string
 }
 
-const DEFAULT_SETTINGS: AppSettings = { theme: DEFAULT_THEME, tags: DEFAULT_TAGS }
+export const DEFAULT_ALBUM_TITLE = 'Nuestro álbum'
+
+const DEFAULT_SETTINGS: AppSettings = { theme: DEFAULT_THEME, tags: DEFAULT_TAGS, albumTitle: DEFAULT_ALBUM_TITLE }
+
+const albumTitleOf = (value: unknown): string =>
+  typeof value === 'string' && value.trim() ? value.trim().slice(0, 60) : DEFAULT_ALBUM_TITLE
 const LOCAL_KEY = 'viajesyplanes.settings'
 
 function readCache(): AppSettings {
@@ -35,6 +42,7 @@ function readCache(): AppSettings {
     return {
       theme: { ...DEFAULT_THEME, ...stored.theme },
       tags: Array.isArray(stored.tags) && stored.tags.length > 0 ? stored.tags : DEFAULT_TAGS,
+      albumTitle: albumTitleOf(stored.albumTitle),
     }
   } catch {
     return DEFAULT_SETTINGS
@@ -79,6 +87,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
         const next: AppSettings = {
           theme: { ...DEFAULT_THEME, ...data.theme },
           tags: Array.isArray(data.tags) && data.tags.length > 0 ? data.tags : DEFAULT_TAGS,
+          albumTitle: albumTitleOf(data.albumTitle),
         }
         setSettings(next)
         writeCache(next)

@@ -1,5 +1,7 @@
-import { useRef, useState, type DragEvent, type ReactNode } from 'react'
-import { Check, ChevronLeft, Image, ImagePlus, Trash2, X } from 'lucide-react'
+import { useRef, useState, type DragEvent, type FormEvent, type ReactNode } from 'react'
+import { Check, ChevronLeft, Image, ImagePlus, Pencil, Trash2, X } from 'lucide-react'
+import { DEFAULT_ALBUM_TITLE, useAppSettings } from '../appSettings'
+import { AlbumBook } from '../components/AlbumBook'
 import { Polaroid } from '../components/Polaroid'
 import { Sheet } from '../components/Sheet'
 import { Viewer } from '../components/Viewer'
@@ -247,7 +249,7 @@ function AlbumPage({ plan, onBack, onOpenPlan }: { plan: Plan; onBack: () => voi
   )
 }
 
-type GroupBy = 'general' | 'fecha' | 'lugar'
+type GroupBy = 'libro' | 'fecha' | 'lugar'
 
 /** Nota al pie de la polaroid: fecha, lugar (si no es el criterio de agrupación) y cuántas fotos. */
 function polaroidNote(p: Plan, groupBy: GroupBy): string {
@@ -257,12 +259,28 @@ function polaroidNote(p: Plan, groupBy: GroupBy): string {
   return p.photoCount > 0 ? `${note}, ${plural(p.photoCount, 'foto', 'fotos')}` : note
 }
 
-/** Álbum: cada plan cumplido es una polaroid. General las junta todas, o se pueden agrupar por mes o por lugar. */
+/** Álbum: un libro que se hojea (una página por recuerdo), o las polaroids agrupadas por mes o por lugar. */
 export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string) => void; onGoToPlans: () => void }) {
   const { plans, getPlan } = usePlans()
   const [pageId, setPageId] = useState<string | null>(null)
   const [picking, setPicking] = useState(false)
-  const [groupBy, setGroupBy] = useState<GroupBy>('general')
+  const [groupBy, setGroupBy] = useState<GroupBy>('libro')
+  const { settings, saveSettings } = useAppSettings()
+  const toast = useToast()
+  const [editingTitle, setEditingTitle] = useState<string | null>(null)
+
+  const saveTitle = async (e: FormEvent) => {
+    e.preventDefault()
+    const next = editingTitle?.trim() || DEFAULT_ALBUM_TITLE
+    setEditingTitle(null)
+    if (next === settings.albumTitle) return
+    try {
+      await saveSettings({ ...settings, albumTitle: next.slice(0, 60) })
+      toast('Título del álbum guardado')
+    } catch {
+      toast('No se pudo guardar el título. Revisa la conexión e inténtalo de nuevo.')
+    }
+  }
   const page = pageId ? getPlan(pageId) : undefined
 
   const done = plans
@@ -273,7 +291,7 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
   // Por fecha: un grupo por mes. Por lugar: un grupo por lugar (o título si no tiene lugar), para
   // ver juntas todas las veces que repetimos algo, sin importar cuándo fue cada una.
   const groupMap = new Map<string, Plan[]>()
-  if (groupBy !== 'general') {
+  if (groupBy !== 'libro') {
     for (const p of done) {
       const key = groupBy === 'fecha' ? p.completedAt!.slice(0, 7) : (p.place?.name ?? p.title)
       groupMap.set(key, [...(groupMap.get(key) ?? []), p])
@@ -302,7 +320,32 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
     <div className="page page-wide">
       <header className="album-head">
         <div>
-          <h1 className="page-title">Nuestro álbum</h1>
+          {editingTitle !== null ? (
+            <form className="title-edit" onSubmit={saveTitle}>
+              <input
+                className="input"
+                autoFocus
+                maxLength={60}
+                value={editingTitle}
+                aria-label="Título del álbum"
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onKeyDown={(e) => e.key === 'Escape' && setEditingTitle(null)}
+              />
+              <button type="submit" className="btn btn-primary btn-small">
+                Guardar
+              </button>
+              <button type="button" className="btn btn-quiet btn-small" onClick={() => setEditingTitle(null)}>
+                Cancelar
+              </button>
+            </form>
+          ) : (
+            <h1 className="page-title album-title">
+              <span className="album-title-text">{settings.albumTitle}</span>
+              <button className="icon-btn" onClick={() => setEditingTitle(settings.albumTitle)} aria-label="Cambiar el título del álbum">
+                <Pencil size={16} />
+              </button>
+            </h1>
+          )}
           {done.length > 0 && (
             <p className="page-intro">
               {plural(done.length, 'recuerdo', 'recuerdos')}, {plural(totalPhotos, 'foto', 'fotos')}
@@ -330,8 +373,8 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
       ) : (
         <>
           <div className="filter" role="tablist" aria-label="Agrupar álbum">
-            <button role="tab" aria-selected={groupBy === 'general'} onClick={() => setGroupBy('general')}>
-              General
+            <button role="tab" aria-selected={groupBy === 'libro'} onClick={() => setGroupBy('libro')}>
+              Libro
             </button>
             <button role="tab" aria-selected={groupBy === 'fecha'} onClick={() => setGroupBy('fecha')}>
               Por fecha
@@ -340,25 +383,14 @@ export function AlbumView({ onOpenPlan, onGoToPlans }: { onOpenPlan: (id: string
               Por lugar
             </button>
           </div>
-          {groupBy === 'general' ? (
-            <ul className="album-grid album-grid-general">
-              {done.map((p) => (
-                <li key={p.id}>
-                  <button className="album-item" onClick={() => setPageId(p.id)}>
-                    <Polaroid id={p.id} stacked={p.photoCount > 1} caption={p.title} note={polaroidNote(p, groupBy)}>
-                      {p.cover ? (
-                        <img src={p.cover.url} alt="" loading="lazy" />
-                      ) : (
-                        <span className="polaroid-empty">
-                          <ImagePlus size={22} strokeWidth={1.5} aria-hidden />
-                          Sin fotos aún
-                        </span>
-                      )}
-                    </Polaroid>
-                  </button>
-                </li>
-              ))}
-            </ul>
+          {groupBy === 'libro' ? (
+            <AlbumBook
+              title={settings.albumTitle}
+              plans={[...done].reverse()}
+              pendingCount={plans.filter((p) => p.status === 'pendiente').length}
+              onOpenPage={setPageId}
+              onUpload={() => setPicking(true)}
+            />
           ) : (
             groups.map(({ key, title, items }) => (
               <section key={key} className="month">

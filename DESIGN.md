@@ -40,7 +40,7 @@ El mapa también se tiñe: tierra beige, parques verde salvia y agua azul suave.
 - **Planes**: una frase en primera persona y una lista con separadores ("Con fecha", "Sin fecha", "Cumplidos").
 - **Mapa**: a pantalla completa, con los marcadores agrupados y un panel con la foto del plan.
 - **Para repetir**: la foto de la última vez y cuánto hace de ella.
-- **Álbum** (lo más llamativo): fotos tipo polaroid con una ligera inclinación, el pie de foto escrito a mano y una pila de tarjetas cuando hay varias fotos. Cada plan tiene su página, con sus fotos en mosaico. Se pueden subir fotos desde el álbum eligiendo el plan.
+- **Álbum** (lo más llamativo): un libro que se hojea. Tapa de tela café con costura dorada, el título (editable y compartido) escrito a mano y una foto pegada; dedicatoria; una página por recuerdo con la foto montada con esquineros, título a mano, fecha, lugar y nota; "Continuará…" y contratapa. Las hojas giran en 3D sobre el lomo (doble página en pantallas grandes, una en el celular). "Por fecha" y "Por lugar" siguen mostrando las polaroids. Cada plan tiene su página, con sus fotos en mosaico. Se pueden subir fotos desde el álbum eligiendo el plan.
 
 Formas: botones en píldora, campos y paneles con 12–20px de radio, y fotos con marco blanco. El movimiento solo responde a acciones del usuario, y se respeta `prefers-reduced-motion`.
 

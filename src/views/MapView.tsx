@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Map as GoogleMap, useMap } from '@vis.gl/react-google-maps'
-import { Check, MapPin, X } from 'lucide-react'
+import { Check, ExternalLink, MapPin, X } from 'lucide-react'
 import { usePlanActions } from '../actions'
 import { useAppSettings, useTagLabel } from '../appSettings'
 import { CategoryIcon } from '../components/CategoryIcon'
@@ -9,6 +9,7 @@ import { MAP_BASE_PROPS, useShowZoomControl } from '../components/mapStyle'
 import { PlanMarkers } from '../components/PlanMarkers'
 import { TagIcon } from '../components/TagIcon'
 import { mapsEnabled } from '../maps'
+import { googleMapsUrl } from '../places'
 import { usePlans } from '../store'
 import { CATEGORY_LABEL, type Category, type Plan, type Tag } from '../types'
 import { longDate, plural } from '../utils'
@@ -71,6 +72,13 @@ function SelectedPanel({ plan, onOpen, onClose }: { plan: Plan; onOpen: (id: str
           <MapPin size={14} strokeWidth={1.75} aria-hidden />
           {plan.place!.name}
         </p>
+        {plan.place!.address && plan.place!.address !== plan.place!.name && (
+          <p className="map-panel-address">{plan.place!.address}</p>
+        )}
+        <a className="maps-link" href={googleMapsUrl(plan.place!)} target="_blank" rel="noopener noreferrer">
+          <ExternalLink size={14} strokeWidth={2} aria-hidden />
+          Ver en Google Maps
+        </a>
         <p className={`map-panel-state ${done ? 'state-done' : ''}`}>
           {done ? (
             <>
@@ -146,7 +154,7 @@ export function MapView({
   return (
     <div className="map-view">
       {mapsEnabled ? (
-        <GoogleMap {...MAP_BASE_PROPS} className="map" defaultCenter={DEFAULT_CENTER} defaultZoom={3} gestureHandling="greedy" zoomControl={showZoomControl}>
+        <GoogleMap {...MAP_BASE_PROPS} clickableIcons className="map" defaultCenter={DEFAULT_CENTER} defaultZoom={3} gestureHandling="greedy" zoomControl={showZoomControl}>
           <Camera plans={visible} focus={focus} />
           <PlanMarkers plans={visible} selectedId={selectedId} onSelect={setSelectedId} />
         </GoogleMap>

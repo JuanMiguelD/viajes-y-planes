@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Check, Heart, MapPin, Pencil, Repeat2, Trash2, Undo2, X } from 'lucide-react'
+import { Check, ExternalLink, Heart, MapPin, Pencil, Repeat2, Trash2, Undo2, X } from 'lucide-react'
 import { usePlanActions } from '../actions'
 import { useTagLabel } from '../appSettings'
+import { googleMapsUrl } from '../places'
 import { usePlans } from '../store'
 import { useToast } from '../toast'
 import { CATEGORY_LABEL } from '../types'
@@ -106,10 +107,19 @@ export function PlanDetail({
                 <dt>Lugar</dt>
                 <dd>
                   {plan.place.name}
-                  <button className="text-btn" onClick={() => onShowOnMap(plan.id)}>
-                    <MapPin size={15} strokeWidth={1.75} aria-hidden />
-                    Ver en el mapa
-                  </button>
+                  {plan.place.address && plan.place.address !== plan.place.name && (
+                    <span className="fact-note">{plan.place.address}</span>
+                  )}
+                  <span className="place-links">
+                    <button className="text-btn" onClick={() => onShowOnMap(plan.id)}>
+                      <MapPin size={15} strokeWidth={1.75} aria-hidden />
+                      Ver en el mapa
+                    </button>
+                    <a className="text-btn" href={googleMapsUrl(plan.place)} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink size={14} strokeWidth={2} aria-hidden />
+                      Google Maps
+                    </a>
+                  </span>
                 </dd>
               </div>
             )}
