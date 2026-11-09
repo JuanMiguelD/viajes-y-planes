@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { after, before, beforeEach, describe, test } from 'node:test'
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 import { deleteObject, getBytes, ref, uploadBytes } from 'firebase/storage'
 
 const ALLOWED = ['nosotros@example.com', 'novia@example.com']
@@ -108,6 +108,52 @@ for (const [who, ctx] of Object.entries(outsiders)) {
     })
   })
 }
+
+describe('Palabritas: la mesa y la palabra secreta', () => {
+  const [setter, guesser] = ALLOWED
+  const room = (db) => doc(db, 'games/palabritas')
+  const secret = (db) => doc(db, 'games/palabritas/private/secret')
+  const seedSecret = () =>
+    env.withSecurityRulesDisabled((admin) =>
+      setDoc(doc(admin.firestore(), 'games/palabritas/private/secret'), { word: 'gato', setterUid: setter, round: 1 }),
+    )
+
+  beforeEach(() =>
+    env.withSecurityRulesDisabled((admin) =>
+      setDoc(doc(admin.firestore(), 'games/palabritas'), { phase: 'setup', setterUid: setter, guesserUid: guesser }),
+    ),
+  )
+
+  test('los dos leen y actualizan la mesa', async () => {
+    await assertSucceeds(getDoc(room(as(guesser).firestore())))
+    await assertSucceeds(updateDoc(room(as(guesser).firestore()), { phase: 'playing' }))
+  })
+  test('quien elige guarda y lee su palabra', async () => {
+    const db = as(setter).firestore()
+    await assertSucceeds(setDoc(secret(db), { word: 'gato', setterUid: setter, round: 1 }))
+    await assertSucceeds(getDoc(secret(db)))
+  })
+  test('quien adivina no puede leer la palabra', async () => {
+    await seedSecret()
+    await assertFails(getDoc(secret(as(guesser).firestore())))
+  })
+  test('ni haciéndose pasar en la mesa por quien elige', async () => {
+    await seedSecret()
+    const db = as(guesser).firestore()
+    await assertSucceeds(updateDoc(room(db), { setterUid: guesser }))
+    await assertFails(getDoc(secret(db)))
+  })
+  test('quien adivina no puede escribir la palabra si no le toca elegir', () =>
+    assertFails(setDoc(secret(as(guesser).firestore()), { word: 'perro', setterUid: guesser, round: 1 })))
+  test('nadie puede guardar la palabra a nombre del otro', () =>
+    assertFails(setDoc(secret(as(setter).firestore()), { word: 'perro', setterUid: guesser, round: 1 })))
+  test('alguien de fuera no ve la mesa ni la palabra', async () => {
+    await seedSecret()
+    const db = as('intruso@example.com').firestore()
+    await assertFails(getDoc(room(db)))
+    await assertFails(getDoc(secret(db)))
+  })
+})
 
 describe('sin el documento config/acceso', () => {
   test('nadie entra, ni siquiera ustedes (crear config/acceso antes de publicar las reglas)', async () => {

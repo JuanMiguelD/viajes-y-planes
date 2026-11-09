@@ -63,3 +63,12 @@ Para editar el código y probarlo en su computador:
 6. **Desplegar reglas o la web** (opcional): el dueño la agrega al proyecto de Firebase en *Configuración del proyecto → Usuarios y permisos* con rol **Editor**. Después ella ejecuta `npx firebase login` y publica con `npm run deploy` desde `main` actualizado (`git pull`), nunca desde una copia vieja: publicar reemplaza la web, las cabeceras y las reglas por las de su carpeta.
 
 Cada uno trabaja en una rama (`git switch -c mi-cambio`) y abre un *pull request* para que el otro lo revise antes de unirlo a `main`.
+
+## Juegos (sección escondida)
+
+Toca tres veces seguidas el corazón junto a "Nuestros planes" en la cabecera. Desde ahí, en la computadora queda "Juegos" en el menú lateral; en el celular se entra de nuevo por el corazón.
+
+**Palabritas** es el Wordle para dos que hicimos aparte, adaptado a la app. La mesa vive en Firestore (`games/palabritas`) y la palabra secreta en `games/palabritas/private/secret`, que **solo puede leer quien la eligió** (lo hacen cumplir las reglas). Por eso es el dispositivo de quien puso la palabra el que revela los colores de cada intento: tiene que tener el juego abierto para que se vean.
+
+Para probarlo en local con dos cuentas de prueba, sin tocar el proyecto real, la app tiene un modo con los emuladores de Firebase (`VITE_FIREBASE_EMULATORS=true`); la revisión previa al despliegue impide publicarlo.
+

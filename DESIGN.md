@@ -42,6 +42,8 @@ El mapa también se tiñe: tierra beige, parques verde salvia y agua azul suave.
 - **Para repetir**: la foto de la última vez y cuánto hace de ella.
 - **Álbum** (lo más llamativo): un libro que se hojea. Tapa de tela café con costura dorada, el título (editable y compartido) escrito a mano y una foto pegada; dedicatoria; una página por recuerdo con la foto montada con esquineros, título a mano, fecha, lugar y nota; "Continuará…" y contratapa. Las hojas giran en 3D sobre el lomo (doble página en pantallas grandes, una en el celular). "Por fecha" y "Por lugar" siguen mostrando las polaroids. Cada plan tiene su página, con sus fotos en mosaico. Se pueden subir fotos desde el álbum eligiendo el plan.
 
+- **Juegos** (easter egg): se descubre tocando tres veces el corazón de la cabecera; desde ahí aparece en el menú lateral de la computadora. **Palabritas**, nuestro Wordle para dos, usa la paleta de la app: verde salvia (letra en su lugar), miel (está en otro lugar) y gris cálido (no está), con fichas que se adaptan al largo de la palabra.
+
 Formas: botones en píldora, campos y paneles con 12–20px de radio, y fotos con marco blanco. El movimiento solo responde a acciones del usuario, y se respeta `prefers-reduced-motion`.
 
 ## Logo

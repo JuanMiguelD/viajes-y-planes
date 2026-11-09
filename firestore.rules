@@ -24,6 +24,19 @@ service cloud.firestore {
       allow read, write: if isCouple();
     }
 
+    // Juegos: la mesa es de los dos. La palabra secreta de Palabritas va aparte y solo la
+    // puede leer quien la eligió; solo la puede escribir quien tiene el turno de elegirla.
+    match /games/{game} {
+      allow read, write: if isCouple();
+
+      match /private/secret {
+        allow read: if isCouple() && resource.data.setterUid == request.auth.uid;
+        allow create, update: if isCouple()
+          && request.resource.data.setterUid == request.auth.uid
+          && get(/databases/$(database)/documents/games/$(game)).data.setterUid == request.auth.uid;
+      }
+    }
+
     // Todo lo demás, incluida config/acceso, queda cerrado para la app.
   }
 }

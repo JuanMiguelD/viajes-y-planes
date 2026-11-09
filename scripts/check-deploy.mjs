@@ -23,6 +23,11 @@ if (missing.length > 0) {
   fail(`faltan variables en .env.local (${missing.join(', ')}). Sin ellas la app publicada no tendría login, fotos o mapa.`)
 }
 
+// El modo de pruebas con emuladores nunca debe llegar a la web publicada
+if (env.VITE_FIREBASE_EMULATORS === 'true') {
+  fail('VITE_FIREBASE_EMULATORS está activado; ese modo es solo para pruebas locales.')
+}
+
 // El build debe apuntar al mismo proyecto al que se va a desplegar
 const target = process.env.GCLOUD_PROJECT || JSON.parse(readFileSync('.firebaserc', 'utf8')).projects?.default
 if (target && env.VITE_FIREBASE_PROJECT_ID !== target) {

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { APIProvider } from '@vis.gl/react-google-maps'
 import {
   BookHeart,
   CalendarDays,
+  Gamepad2,
   Heart,
   ListChecks,
   LogOut,
@@ -26,11 +27,12 @@ import { ToastProvider } from './toast'
 import usImage from './components/us.png'
 import { AlbumView } from './views/AlbumView'
 import { CalendarView } from './views/CalendarView'
+import { GamesView } from './views/GamesView'
 import { MapView } from './views/MapView'
 import { PlansView } from './views/PlansView'
 import { RepeatView } from './views/RepeatView'
 
-type Tab = 'planes' | 'mapa' | 'repetir' | 'calendario' | 'recuerdos'
+type Tab = 'planes' | 'mapa' | 'repetir' | 'calendario' | 'recuerdos' | 'juegos'
 
 const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: 'planes', label: 'Planes', icon: ListChecks },
@@ -42,7 +44,18 @@ const TABS: { id: Tab; label: string; icon: LucideIcon }[] = [
 
 function tabFromHash(): Tab {
   const hash = window.location.hash.slice(1)
+  // Juegos es una sección escondida: no está en el menú hasta descubrirla
+  if (hash === 'juegos' || hash.startsWith('juegos/')) return 'juegos'
   return TABS.some((t) => t.id === hash) ? (hash as Tab) : 'planes'
+}
+
+const GAMES_KEY = 'viajesyplanes.juegos'
+const gamesDiscovered = () => {
+  try {
+    return localStorage.getItem(GAMES_KEY) === '1'
+  } catch {
+    return false
+  }
 }
 
 function Shell({ onLogout }: { onLogout: (() => void) | null }) {
@@ -54,6 +67,10 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
   const [creating, setCreating] = useState(false)
   const [createDate, setCreateDate] = useState<string | null>(null)
   const [showSettings, setShowSettings] = useState(false)
+  // Easter egg: tres toques seguidos al corazón de la cabecera abren el rincón de juegos
+  const [gamesFound, setGamesFound] = useState(gamesDiscovered)
+  const [burst, setBurst] = useState(0)
+  const taps = useRef<number[]>([])
 
   useEffect(() => {
     const onHash = () => setTabState(tabFromHash())
@@ -72,6 +89,22 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
     if (t !== 'mapa') setMapFocus(null)
     window.history.pushState(null, '', `#${t}`)
     setTabState(t)
+  }
+
+  const tapHeart = () => {
+    const now = Date.now()
+    taps.current = [...taps.current.filter((t) => now - t < 1200), now]
+    if (taps.current.length < 3) return
+    taps.current = []
+    setBurst(now)
+    window.setTimeout(() => setBurst(0), 1100)
+    try {
+      localStorage.setItem(GAMES_KEY, '1')
+    } catch {
+      // Sin almacenamiento local el rincón igual se abre; solo no queda en el menú
+    }
+    setGamesFound(true)
+    setTab('juegos')
   }
 
   const showOnMap = (id: string) => {
@@ -109,7 +142,16 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
       <header className="masthead">
         <span className="brand">
           <img className="brand-photo" src={usImage} alt="" aria-hidden />
-          <Heart className="icon-heart" size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
+          <button type="button" className="brand-heart" onClick={tapHeart} aria-label="Corazón">
+            <Heart className="icon-heart" size={18} strokeWidth={2.4} fill="currentColor" aria-hidden />
+            {burst > 0 && (
+              <span className="heart-burst" key={burst} aria-hidden>
+                {Array.from({ length: 7 }, (_, i) => (
+                  <Heart key={i} size={12 + (i % 3) * 3} fill="currentColor" strokeWidth={0} style={{ '--k': i } as CSSProperties} />
+                ))}
+              </span>
+            )}
+          </button>
           Nuestros planes
         </span>
         <button className="btn btn-primary btn-new" onClick={() => openCreate()}>
@@ -134,6 +176,20 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
             {counts[id] ? <span className="nav-count">{counts[id]}</span> : null}
           </a>
         ))}
+        {gamesFound && (
+          <a
+            href="#juegos"
+            className="nav-games"
+            aria-current={tab === 'juegos' ? 'page' : undefined}
+            onClick={(e) => {
+              e.preventDefault()
+              setTab('juegos')
+            }}
+          >
+            <Gamepad2 size={20} strokeWidth={1.75} aria-hidden />
+            <span className="nav-label">Juegos</span>
+          </a>
+        )}
       </nav>
 
       <div className="account">
@@ -188,6 +244,8 @@ function Shell({ onLogout }: { onLogout: (() => void) | null }) {
           <RepeatView onOpen={openView} onOpenEdit={openForEdit} onGoToPlans={() => setTab('planes')} />
         ) : tab === 'calendario' ? (
           <CalendarView onOpen={openView} onAddPlan={openCreate} />
+        ) : tab === 'juegos' ? (
+          <GamesView />
         ) : (
           <AlbumView onOpenPlan={openView} onGoToPlans={() => setTab('planes')} />
         )}
